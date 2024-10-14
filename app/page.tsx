@@ -1,12 +1,12 @@
 import Footer from "@/components/organisms/footer";
-import HeroPage from "@/components/organisms/hero-page";
-import StickyScrollPage from "@/components/organisms/sticky-scroll-page";
+import Hero from "@/components/organisms/hero";
+import StickyScroller from "@/components/organisms/sticky-scroller";
 
 const HomePage = () => {
   return (
     <>
-      <HeroPage />
-      <StickyScrollPage />
+      <Hero />
+      <StickyScroller />
       <Footer />
     </>
   );
