@@ -6,10 +6,10 @@ import "@/styles/globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://crystalrohr.vercel.app/"),
   title: "Crystalrohr",
-  icons: "/crystalrohr-icon.png",
+  icons: "/icon.png",
   description: "Video Auto Caption Service with DePIN Network Participation",
   openGraph: {
-    images: "/crystalrohr-opengraph.png",
+    images: "/opengraph.png",
     url: "https://crystalrohr.vercel.app/",
     title: "Crystalrohr",
     description: "Video Auto Caption Service with DePIN Network Participation",
