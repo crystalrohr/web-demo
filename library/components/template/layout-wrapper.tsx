@@ -1,41 +1,37 @@
 "use client";
 
-import { Inter, Lexend } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
+import localFont from "next/font/local";
 
 import { Toaster } from "@/components/atoms/sonner";
-import Footer from "@/components/organisms/footer";
-import Header from "@/components/organisms/header";
 import RootProvider from "@/providers";
 import { cn } from "@/utils";
-import NextTopLoader from "nextjs-toploader";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 const inter = Inter({ subsets: ["latin"], preload: true });
-const lexend = Lexend({
+const outfit = Outfit({
   subsets: ["latin"],
   preload: true,
-  variable: "--font-lexend",
+  weight: "600",
+  variable: "--font-outfit",
+  display: "swap",
+});
+const atyp = localFont({
+  src: [
+    {
+      path: "../public/fonts/AtypDisplay-Semibold.woff2",
+      weight: "600",
+      style: "normal",
+    },
+  ],
+  variable: "--font-atyp",
+  preload: true,
 });
 
 const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en">
-      <body className={cn("flex w-full", inter.className, lexend.variable)}>
-        <RootProvider>
-          <div className="flex flex-col w-full min-h-screen overflow-x-hidden">
-            <Header />
-            <NextTopLoader
-              color="#550EFB"
-              height={3}
-              showSpinner={true}
-              speed={200}
-              shadow="0 0 10px #2299DD,0 0 5px #2299DD"
-            />
-            <ToastContainer/>
-            {children}
-          </div>
-        </RootProvider>
+      <body className={cn(inter.className, outfit.variable, atyp.variable)}>
+        <RootProvider>{children}</RootProvider>
         <Toaster />
       </body>
     </html>

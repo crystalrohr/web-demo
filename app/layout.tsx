@@ -7,12 +7,12 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://crystalrohr.vercel.app/"),
   title: "Crystalrohr",
   icons: "/crystalrohr-icon.png",
-  description: "",
+  description: "Video Auto Caption Service with DePIN Network Participation",
   openGraph: {
     images: "/crystalrohr-opengraph.png",
     url: "https://crystalrohr.vercel.app/",
     title: "Crystalrohr",
-    description: "",
+    description: "Video Auto Caption Service with DePIN Network Participation",
     siteName: "Crystalrohr",
   },
 };
