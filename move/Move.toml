@@ -1,0 +1,14 @@
+[package]
+name = "crystalrohr"
+version = "0.0.1"
+authors = []
+
+[addresses]
+crystalrohr = "_"
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "mainnet"
+subdir = "aptos-move/framework/aptos-framework"
+
+[dev-dependencies]
