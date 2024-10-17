@@ -1,140 +1,85 @@
-Here's a README file for your project based on the flow diagram you provided:
-
----
+# Crystalrohr: Decentralized Video Captioning on Aptos
 
 [Demo](https://vimeo.com/1007550172?share=copy)
 
-# Project Name: Video Auto Caption Service with DePIN Network Participation
-
 ## Overview
 
-This project provides a comprehensive platform for users to auto-generate captions for their videos and participate in a decentralized physical infrastructure network (DePIN) to earn tokens. The application offers seamless wallet integration, token management, and account management, making it easy for users to upload, process, and share videos with captions, as well as contribute resources to the network.
-
-## Table of Contents
-
-- [Features](#features)
-- [Flow Diagram](#flow-diagram)
-- [Sponsors Used](#Sponsors-used)
-- [Blockchains Used](#Blockchains-used)
-- [Installation](#installation)
-- [Usage](#usage)
-
+Crystalrohr is a decentralized video captioning platform built on the Aptos blockchain using Move language. It leverages a Decentralized Physical Infrastructure Network (DePIN) for node participation and resource contribution. The platform offers automated video captioning services while allowing users to earn tokens by contributing to the network.
 
 ## Features
 
 ### Video Auto Caption Service
 
-- **User Authentication**: Secure login and wallet connection.
-- **Onboarding**: Guided onboarding process for new users.
-- **Video Upload**: Users can upload videos to generate captions automatically.
-- **Progress Tracking**: Real-time progress bar during the captioning process.
-- **Caption Review**: Users can review and edit auto-generated captions.
-- **Download and Share**: Download captioned videos and share them easily.
+- **Secure Authentication**: Wallet-based login using Aptos accounts.
+- **Streamlined Onboarding**: Guided process for new users.
+- **Efficient Video Processing**: Upload videos and generate captions using the Aptos-powered backend.
+- **Real-time Tracking**: Monitor captioning progress through on-chain events.
 
 ### DePIN Network Participation
 
-- **Staking and Contribution**: Stake tokens and contribute resources to earn tokens.
-- **Earnings Dashboard**: Track earnings and contribution statistics.
+- **Staking Mechanism**: Stake ROHR tokens to become a network node.
+- **Resource Contribution**: Offer computational resources for video captioning.
+- **Reward System**: Earn tokens for successful captioning tasks.
 
 ### Token Management
 
-- **Token Balance**: View and manage token balances.
-- **Purchases and Withdrawals**: Purchase more tokens, set auto-recharge, and withdraw tokens.
+- **ROHR Token**: Native fungible asset on Aptos for platform operations.
+- **On-chain Transactions**: Purchase, stake, and withdraw tokens seamlessly.
 
-### Account Management
+## Technical Architecture
 
-- **Profile Updates**: Update personal information and manage profile settings.
+Crystalrohr utilizes three main Move modules:
 
+1. **Protocol**: Manages the core logic for node selection, video submission, and caption completion.
+2. **Staking**: Handles token staking for nodes, determining selection probability.
+3. **Asset**: Implements the ROHR token as a fungible asset on Aptos.
+
+The platform leverages Aptos's fast finality and robust smart contract capabilities to ensure efficient and secure operations.
 
 ## Flow Diagram
 
 ```mermaid
 graph TD
-    A[User visits website] --> B[User authenticates/logs in]
-    B --> C[User connects wallet]
-    C --> D[User lands on dashboard]
-
-    D --> E{New user?}
-    E -->|Yes| F[Onboarding process]
-    E -->|No| G[Video Auto Caption Service]
-    F --> G
-    G --> H[User clicks 'Upload Video']
-    H --> I[User selects video file]
-    I --> J[User confirms upload]
-    J --> K[System processes video]
-    K --> L[User views progress bar]
-    L --> M[System completes captioning]
-    M --> N[User receives notification]
-    N --> O[User reviews auto-generated captions]
-    O --> P{User satisfied?}
-    P -->|Yes| Q[User downloads captioned video]
-    P -->|No| R[User edits captions]
-    R --> S[User saves changes]
-    S --> Q
-    Q --> T[User shares video]
-    T --> G
-
-    D --> U[DePIN Network Participation]
-    U --> V{User staked?}
-    V --> |Yes| W[User clicks 'Contribute Resources']
-    V --> |No| X[User clicks 'Stakes Token']
-    X --> W
-    W --> Y[User starts contributing]
-    Y --> Z[User earns tokens]
-    Z --> AA[User views contribution stats]
-
-    D --> AB[Token Management]
-    AB --> AC[User views token balance]
-    AC --> AD[User purchases more tokens]
-    AD --> AE[User sets auto-recharge]
-    AC --> AF[User withdraws tokens]
-
-    D --> AG[Account Management]
-    AG --> AH[User updates profile]
-    AH --> AI[User views captioning history]
-    AI --> AJ[User manages subscriptions]
+    A[User connects Aptos wallet] --> B[User authenticates on platform]
+    B --> C[User lands on dashboard]
+    C --> D{New user?}
+    D -->|Yes| E[Complete on-chain onboarding]
+    D -->|No| F[Access Video Captioning Service]
+    E --> F
+    F --> G[Upload video for captioning]
+    G --> H[Smart contract processes request]
+    H --> I[Selected node performs captioning]
+    I --> J[User reviews captions on-chain]
+    J --> K[Download or share video]
+    C --> L[Participate in DePIN Network]
+    L --> M[Stake ROHR tokens]
+    M --> N[Contribute resources as node]
+    N --> O[Earn rewards for captioning tasks]
+    C --> P[Manage ROHR tokens]
+    P --> Q[View token balance]
+    Q --> R[Purchase or withdraw tokens]
+    C --> S[Update on-chain profile]
+    S --> T[View contribution history]
 ```
 
-## Sponsors Used
+## Aptos Integration Highlights
 
-- **Web3Auth**: Used Web3auth as primary mode of authentication
-- **Chainlink**: Used Chainlink's VRF to randomly select nodes
-- **XMTP**: Using XMTP suscriber sdk for notifications
-- **Sign Protocol**: Used sign protocol to generate attestations for the captioned video
-
-## Blockchains Used
-- **Ethereum Sepolia Testnet**
-- **Rootstock Testnet**
-- **Hedera Testnet**
-- **Morph Testnet**
-- **Kinto Holesky**
+- **Move Language**: Smart contracts written in Move for enhanced security and efficiency.
+- **On-chain State Management**: User profiles, staking information, and captioning records stored on Aptos.
+- **Event System**: Utilizes Aptos event system for real-time updates on captioning progress and rewards.
+- **Randomness Module**: Leverages Aptos's randomness module for fair node selection.
+- **Fungible Asset Standard**: ROHR token implemented using Aptos's fungible asset standard.
 
 ## Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-repo/project-name.git
-   ```
-2. Install dependencies:
-   ```bash
-   cd project-name
-   npm install
-   ```
-3. Set up environment variables:
-   - Create a `.env` file in the root directory.
-   - Add the necessary environment variables as per `.env.example`.
+1. `yarn install`
+2. `yarn run dev`
+3. `look into the move folder for the modules`
 
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+## Contributing
 
-## Usage
+We welcome contributions to Crystalrohr! Please feel free to submit issues, fork the repository and send pull requests!
 
-1. Visit the website and log in using your credentials.
-2. Connect your wallet to access the dashboard.
-3. For new users, complete the onboarding process.
-4. Upload a video to auto-generate captions, review, and edit as needed.
-5. Participate in the DePIN network by staking tokens and contributing resources.
-6. Manage tokens, account details, and view captioning history through the dashboard.
+## License
 
+This project is licensed under the [MIT License](LICENSE).
