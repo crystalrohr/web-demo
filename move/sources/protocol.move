@@ -4,6 +4,7 @@ module crystalrohr::crystalrohr_protocol {
     use std::option::{Self, Option};
     use aptos_std::smart_vector::{Self, SmartVector};
     use aptos_framework::randomness;
+    use aptos_framework::event;
     use crystalrohr::rohr;
     use crystalrohr::crystalrohr_staking;
 
@@ -43,6 +44,21 @@ module crystalrohr::crystalrohr_protocol {
         task_address: Option<address>,
     }
 
+    #[event]
+    struct VideoCaptionRequested has drop, store {
+        user_address: address,
+        ipfs_hash: string::String,
+        node_address: address,
+    }
+
+    #[event]
+    struct VideoCaptionCompleted has drop, store {
+        user_address: address,
+        ipfs_hash: string::String,
+        node_address: address,
+        caption: string::String,
+    }
+
     /// Initialize the module
     /// This function is called only once when the module is published
     fun init_module(deployer: &signer) {
@@ -52,6 +68,7 @@ module crystalrohr::crystalrohr_protocol {
                 active: smart_vector::empty(),
             }
         );
+
     }
 
     fun stake_multiplier_reset(node_address: address): u64 acquires Node {
@@ -117,6 +134,23 @@ module crystalrohr::crystalrohr_protocol {
     #[view]
     public fun staked_amount(node_address: address): u64 {
         crystalrohr_staking::staked_amount(node_address)
+    }
+
+    #[view]
+    public fun get_video_caption(user_address: address): Option<Option<string::String>> acquires User {
+        if (!exists<User>(user_address)) {
+            option::none()
+        } else {
+            let user = borrow_global<User>(user_address);
+            option::some(
+                if (option::is_some(&user.video)) {
+                    let video = option::borrow(&user.video);
+                    video.node_proof.caption
+                } else {
+                    option::none()
+                }
+            )
+        }
     }
 
     public entry fun stake(node_account: &signer, amount: u64) {
@@ -187,6 +221,12 @@ module crystalrohr::crystalrohr_protocol {
             node_proof,
         };
         *user_video = option::some(video);
+
+        event::emit(VideoCaptionRequested {
+            user_address,
+            ipfs_hash,
+            node_address: selected_node,
+        });
     }
 
     public entry fun complete_caption_video(node_account: &signer, caption: string::String) acquires Node, User, ProtocolPool {
@@ -201,8 +241,15 @@ module crystalrohr::crystalrohr_protocol {
         if (option::is_some(user_video)) {
             let video = option::borrow_mut(user_video);
             video.node_proof.caption = option::some(caption);
+
+            event::emit(VideoCaptionCompleted {
+                user_address: task_address,
+                ipfs_hash: video.ipfs_hash,
+                node_address,
+                caption,
+            });
         };
-        
+
         // Update node state
         node_state.operation_proofs = node_state.operation_proofs + 1;
         node_state.pending_task = false;
@@ -221,7 +268,7 @@ module crystalrohr::crystalrohr_protocol {
     }
 
     #[test(aptos_framework = @aptos_framework, admin = @crystalrohr, user = @0x123, node = @0x456)]
-    fun test_stake_multiplier_reset(aptos_framework: &signer, admin: &signer, user: &signer, node: &signer) acquires Node, ProtocolPool, User {
+    fun test_stake_multiplier_reset(aptos_framework: &signer, admin: &signer, user: &signer, node: &signer) acquires User, Node, ProtocolPool {
         rohr::initialize_for_testing(admin);
         randomness::initialize_for_testing(aptos_framework);
         init_module(admin);
@@ -373,7 +420,7 @@ module crystalrohr::crystalrohr_protocol {
 
     #[test(aptos_framework = @aptos_framework, admin = @crystalrohr, user = @0x123, node = @0x456)]
     #[expected_failure(abort_code = ENODE_UNAVAILABLE)]
-    fun test_complete_caption_video_node_unavailable(aptos_framework: &signer, admin: &signer, user: &signer) acquires Node, User, ProtocolPool {
+    fun test_complete_caption_video_node_unavailable(aptos_framework: &signer, admin: &signer, user: &signer) acquires User, Node, ProtocolPool {
         rohr::initialize_for_testing(admin);
         randomness::initialize_for_testing(aptos_framework);
         init_module(admin);
@@ -384,7 +431,7 @@ module crystalrohr::crystalrohr_protocol {
 
     #[test(aptos_framework = @aptos_framework, admin = @crystalrohr, user = @0x123, node1 = @0x456, node2= @0x789)]
     #[expected_failure(abort_code = ENODE_NOT_REGISTERED)]
-    fun test_complete_caption_video_node_not_registered(aptos_framework: &signer, admin: &signer, user: &signer, node1: &signer, node2: &signer) acquires Node, User, ProtocolPool {
+    fun test_complete_caption_video_node_not_registered(aptos_framework: &signer, admin: &signer, user: &signer, node1: &signer, node2: &signer) acquires User, Node, ProtocolPool {
         rohr::initialize_for_testing(admin);
         randomness::initialize_for_testing(aptos_framework);
         init_module(admin);
@@ -405,7 +452,7 @@ module crystalrohr::crystalrohr_protocol {
 
     #[test(admin = @crystalrohr, user = @0x123, node = @0x456)]
     #[expected_failure(abort_code = ENODE_NOT_ACTIVE)]
-    fun test_complete_caption_video_not_active(admin: &signer, user: &signer, node: &signer) acquires Node, User, ProtocolPool {
+    fun test_complete_caption_video_not_active(admin: &signer, user: &signer, node: &signer) acquires User, Node, ProtocolPool {
         rohr::initialize_for_testing(admin);
         init_module(admin);
         let user_addr = signer::address_of(user);
@@ -419,7 +466,7 @@ module crystalrohr::crystalrohr_protocol {
     }
 
     #[test(aptos_framework = @aptos_framework, admin = @crystalrohr, user = @0x123, node = @0x456)]
-    fun test_full_video_captioning_flow(aptos_framework: &signer, admin: &signer, user: &signer, node: &signer) acquires Node, User, ProtocolPool {
+    fun test_full_video_captioning_flow(aptos_framework: &signer, admin: &signer, user: &signer, node: &signer) acquires User, Node, ProtocolPool {
         rohr::initialize_for_testing(admin);
         randomness::initialize_for_testing(aptos_framework);
         init_module(admin);
