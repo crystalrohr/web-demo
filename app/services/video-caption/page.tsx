@@ -1,14 +1,15 @@
 "use client";
 
 import { UploadCloud, X } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/atoms/button";
+import ProgressStripe from "@/components/atoms/progress-stripe";
 import SpeechControls from "@/components/molecules/speech-controls";
 import VideoPlayer from "@/components/molecules/video-player";
+import { useCrystalRohrProtocol } from "@/hooks/use-crystalrohr-protocol";
 import useFileUpload from "@/hooks/use-file-upload";
-import { useUserService } from "@/hooks/use-user-service";
 
 interface FileUploadAreaProps {
   inputFile: React.RefObject<HTMLInputElement>;
@@ -22,12 +23,11 @@ interface FileInfoProps {
   uploading: boolean;
 }
 
-interface UploadButtonsProps {
+interface UploadWithCaptionButtonProps {
   file: File | null;
   url: string;
   uploading: boolean;
-  handleUpload: () => Promise<void>;
-  handleGenerateCaption: () => Promise<void>;
+  handleUploadAndGenerateCaption: () => Promise<void>;
 }
 
 interface CaptionGenerationSectionProps {
@@ -36,71 +36,54 @@ interface CaptionGenerationSectionProps {
 }
 
 const VideoProcessingPage = () => {
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [elapsedTime, setElapsedTime] = useState<string>("00:00");
-  const [captionGenerated, setCaptionGenerated] = useState<boolean>(false);
   const [summary, setSummary] = useState<string>("");
 
   const { file, setFile, url, setUrl, uploading, uploadFile, handleChange } =
     useFileUpload();
-  const { uploadVideo, videoId } = useUserService();
+
+  const { captionVideo, pollForVideoCaptions } = useCrystalRohrProtocol();
 
   const inputFile = useRef<HTMLInputElement>(null);
 
-  const handleUpload = useCallback(async () => {
-    const uploadedUrl = await uploadFile();
-    if (uploadedUrl) {
-      try {
-        await uploadVideo();
-        toast.success("Video uploaded successfully");
-      } catch (error) {
-        toast.error("Error uploading video");
-      }
-    } else {
-      toast.error("Error uploading file");
-    }
-  }, [uploadFile, uploadVideo]);
-
-  const handleGenerateCaption = useCallback(async () => {
-    if (!videoId) {
-      toast.error("No video uploaded");
-      return;
-    }
+  const handleUploadAndGenerateCaption = useCallback(async () => {
     try {
-      setStartTime(Date.now());
+      const uploadedUrl = await uploadFile();
+
+      if (!uploadedUrl) {
+        toast.error("Error uploading file");
+        return;
+      }
+
+      toast.success("Video uploaded successfully");
+
+      await captionVideo(uploadedUrl);
+
       toast.success("Caption generation job created");
-      setCaptionGenerated(true);
+
+      const fetchCaptions = async () => {
+        try {
+          const captions = await pollForVideoCaptions(uploadedUrl);
+          if (captions.length > 0) {
+            console.log("Captions found:", captions);
+
+            // TODO: Set Summary
+            setSummary("");
+
+            toast.success("Caption generated successfully");
+          } else {
+            throw "No captions found after all attempts";
+          }
+        } catch (error) {
+          throw error;
+        }
+      };
+
+      fetchCaptions();
     } catch (error) {
-      toast.error("Error creating caption generation job");
+      console.error("Error fetching captions:", error);
+      toast.error("Error during upload or caption generation");
     }
-  }, [videoId]);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (startTime) {
-      interval = setInterval(() => {
-        const now = Date.now();
-        const elapsed = Math.floor((now - startTime) / 1000);
-        setElapsedTime(
-          `${Math.floor(elapsed / 60)}:${(elapsed % 60)
-            .toString()
-            .padStart(2, "0")}`
-        );
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [startTime]);
-
-  useEffect(() => {
-    const fetchSummary = async () => {
-      // Implement summary fetching logic here
-      setTimeout(fetchSummary, 2000);
-    };
-
-    if (captionGenerated) {
-      fetchSummary();
-    }
-  }, [captionGenerated]);
+  }, [uploadFile, captionVideo]);
 
   const parsedSummary = summary
     ? Array.isArray(JSON.parse(summary))
@@ -111,7 +94,7 @@ const VideoProcessingPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-cyan-600 to-[#000011] text-white p-8 flex justify-center">
       <div className="flex flex-col p-4 gap-4 w-full max-w-xl">
-        <h1 className="font-outfit font-semibold">Video Processing Hub</h1>
+        <h1 className="font-outfit font-semibold">Video Caption Hub</h1>
 
         <section className="flex flex-col gap-4 bg-black/20 rounded-2xl p-8 shadow-lg w-full">
           {!file ? (
@@ -126,19 +109,26 @@ const VideoProcessingPage = () => {
           )}
           {uploading && <p className="mt-6">Uploading...</p>}
           {url && <VideoPlayer url={url} />}
-          <UploadButtons
+          <UploadWithCaptionButton
             file={file}
             url={url}
             uploading={uploading}
-            handleUpload={handleUpload}
-            handleGenerateCaption={handleGenerateCaption}
+            handleUploadAndGenerateCaption={handleUploadAndGenerateCaption}
           />
-          {captionGenerated && (
-            <CaptionGenerationSection
-              summary={summary}
-              parsedSummary={parsedSummary}
-            />
-          )}
+          {url &&
+            (summary ? (
+              <CaptionGenerationSection
+                summary={summary}
+                parsedSummary={parsedSummary}
+              />
+            ) : (
+              <div className="relative">
+                <p className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center whitespace-nowrap text-slate-800  text-base font-medium">
+                  Caption is in Progress
+                </p>
+                <ProgressStripe percentage={100} />
+              </div>
+            ))}
         </section>
       </div>
     </div>
@@ -154,8 +144,8 @@ const FileUploadArea = ({ inputFile, handleChange }: FileUploadAreaProps) => (
       <div className="flex flex-col items-center justify-center pt-5 pb-6">
         <UploadCloud className="w-10 h-10 mb-3 text-[#069a9a]" />
         <p className="mb-2 text-sm">
-          <span className="font-semibold">Click to upload</span> or drag and
-          drop
+          <span className="font-semibold">Click to upload</span> use only public
+          videos
         </p>
         <p className="text-xs text-gray-400">MP4, AVI, or MOV (MAX. 800MB)</p>
       </div>
@@ -189,30 +179,22 @@ const FileInfo = ({ file, setUrl, setFile, uploading }: FileInfoProps) => (
   </div>
 );
 
-const UploadButtons = ({
+const UploadWithCaptionButton = ({
   file,
   url,
   uploading,
-  handleUpload,
-  handleGenerateCaption,
-}: UploadButtonsProps) => (
+  handleUploadAndGenerateCaption,
+}: UploadWithCaptionButtonProps) => (
   <>
     {!url && (
       <Button
         disabled={!file || uploading}
-        onClick={handleUpload}
+        onClick={handleUploadAndGenerateCaption}
         className="w-full bg-[#02071E] text-white hover:bg-[#1A1E2E] transition-colors duration-200"
       >
-        Upload Video
+        Upload and Generate Caption
       </Button>
     )}
-    <Button
-      disabled={!file || uploading}
-      onClick={handleGenerateCaption}
-      className="w-full bg-[#02071E] text-white hover:bg-[#1A1E2E] transition-colors duration-200"
-    >
-      Generate Caption
-    </Button>
   </>
 );
 
