@@ -200,7 +200,8 @@ const useCaptureStills = () => {
     const video = videoRef.current;
 
     if (!scene || !video) {
-      throw new Error("No scene ref or video ref");
+      console.error("No scene ref or video ref");
+      return;
     }
 
     captureImage(async ({ clone, similar }) => {
