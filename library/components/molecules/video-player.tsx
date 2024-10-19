@@ -10,7 +10,7 @@ function VideoPlayer({ url, className }: { url: string; className?: string }) {
     <div
       className={cn("rounded-md overflow-hidden", className)}
       style={{
-        width: `${clampBuilder(320, 732, 14, 39.75)}`,
+        width: `auto`,
         height: "auto",
       }}
     >
