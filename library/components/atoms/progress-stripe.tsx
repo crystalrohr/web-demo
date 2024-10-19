@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 interface ProgressBarProps {
   percentage: number;
@@ -27,7 +27,7 @@ const ProgressStripe = ({
     }
   }, [percentage]);
 
-  const className = `meter ${color || ""} ${noStripes ? "nostripes" : ""} ${animate ? "animate" : ""}`;
+  const className = `rounded-full overflow-hidden meter ${color || ""} ${noStripes ? "nostripes" : ""} ${animate ? "animate" : ""}`;
 
   return (
     <div className={className}>
@@ -44,10 +44,6 @@ const ProgressStripe = ({
         .meter > span {
           display: block;
           height: 100%;
-          border-top-right-radius: 20px;
-          border-bottom-right-radius: 20px;
-          border-top-left-radius: 20px;
-          border-bottom-left-radius: 20px;
           background-color: rgb(43, 194, 83);
           background-image: linear-gradient(
             center bottom,
@@ -81,10 +77,6 @@ const ProgressStripe = ({
           z-index: 1;
           background-size: 50px 50px;
           animation: move 2s linear infinite;
-          border-top-right-radius: 8px;
-          border-bottom-right-radius: 8px;
-          border-top-left-radius: 20px;
-          border-bottom-left-radius: 20px;
           overflow: hidden;
         }
         .animate > span:after {
