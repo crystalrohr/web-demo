@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import React, { useLayoutEffect, useRef, useState } from "react";
 import { GlobeMethods } from "react-globe.gl";
 
+import VideoQueueManager from "@/components/molecules/video-queue-manager";
 import { cn } from "@/utils";
 
 const Globe = dynamic(() => import("@/components/organisms/wrapped-globe"), {
@@ -28,6 +29,17 @@ const analytics = [
   },
 ];
 
+const N = 250;
+const gData = Array.from({ length: N }, () => ({
+  lat: (Math.random() - 0.5) * 180,
+  lng: (Math.random() - 0.5) * 360,
+  size: Math.random() / 3,
+  color: ["red", "white", "blue", "green"][Math.floor(Math.random() * 4)],
+  crystal: ["DePIN", "Video", "Caption", "Network"][
+    Math.floor(Math.random() * 4)
+  ],
+}));
+
 const Card = ({
   children,
   className,
@@ -50,13 +62,6 @@ const Card = ({
 const NodeAnalytics = () => {
   const globeRef = useRef<GlobeMethods>();
   const [loaded, setLoaded] = useState(false);
-  const N = 250;
-  const gData = Array.from({ length: N }, () => ({
-    lat: (Math.random() - 0.5) * 180,
-    lng: (Math.random() - 0.5) * 360,
-    size: Math.random() / 3,
-    color: ["red", "white", "blue", "green"][Math.floor(Math.random() * 4)],
-  }));
 
   useLayoutEffect(() => {
     if (globeRef.current && typeof window !== "undefined") {
@@ -69,9 +74,9 @@ const NodeAnalytics = () => {
   }, [loaded]);
 
   return (
-    <div className="flex justify-center flex-1 overflow-scroll w-full">
-      <div className="flex flex-col h-full">
-        <div className="flex flex-col h-full p-4 min-w-fit gap-4 flex-1">
+    <div className="flex justify-center flex-1 w-full">
+      <div className="flex flex-col ">
+        <div className="flex flex-col p-4 min-w-fit gap-4">
           <h1 className="font-outfit font-semibold w-full gap-4">
             Node Analytics
           </h1>
@@ -107,7 +112,7 @@ const NodeAnalytics = () => {
             ))}
           </div>
         </div>
-        <div className="flex justify-center flex-1 overflow-hidden mb-4">
+        <div className="flex justify-center overflow-hidden mb-4 h-[275px]">
           <div className="-mt-4">
             <Globe
               onGlobeReady={() => setLoaded(true)}
@@ -122,10 +127,12 @@ const NodeAnalytics = () => {
               arcsData={gData}
               pointAltitude="size"
               pointColor="color"
-              pointLabel="color"
+              pointLabel="crystal"
             />
           </div>
         </div>
+
+        <VideoQueueManager />
       </div>
     </div>
   );
