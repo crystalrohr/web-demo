@@ -1,7 +1,7 @@
 "use client";
 
 import { UploadCloud, X } from "lucide-react";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/atoms/button";
@@ -10,6 +10,7 @@ import SpeechControls from "@/components/molecules/speech-controls";
 import VideoPlayer from "@/components/molecules/video-player";
 import { useCrystalRohrProtocol } from "@/hooks/use-crystalrohr-protocol";
 import useFileUpload from "@/hooks/use-file-upload";
+import { useGetCID } from "@/hooks/use-get-cid";
 
 interface FileUploadAreaProps {
   inputFile: React.RefObject<HTMLInputElement>;
@@ -18,14 +19,14 @@ interface FileUploadAreaProps {
 
 interface FileInfoProps {
   file: File;
-  setUrl: React.Dispatch<React.SetStateAction<string>>;
+  setCID: React.Dispatch<React.SetStateAction<string>>;
   setFile: React.Dispatch<React.SetStateAction<File | null>>;
   uploading: boolean;
 }
 
 interface UploadWithCaptionButtonProps {
   file: File | null;
-  url: string;
+  cid: string;
   uploading: boolean;
   handleUploadAndGenerateCaption: () => Promise<void>;
 }
@@ -37,9 +38,12 @@ interface CaptionGenerationSectionProps {
 
 const VideoProcessingPage = () => {
   const [summary, setSummary] = useState<string>("");
+  const [videoUrl, setVideoUrl] = useState<string>("");
 
-  const { file, setFile, url, setUrl, uploading, uploadFile, handleChange } =
+  const { file, setFile, cid, setCID, uploading, uploadFile, handleChange } =
     useFileUpload();
+
+  const { getCidData } = useGetCID();
 
   const { captionVideo, pollForVideoCaptions } = useCrystalRohrProtocol();
 
@@ -47,48 +51,51 @@ const VideoProcessingPage = () => {
 
   const handleUploadAndGenerateCaption = useCallback(async () => {
     try {
-      const uploadedUrl = await uploadFile();
-
-      if (!uploadedUrl) {
+      const cid = await uploadFile();
+      if (!cid) {
         toast.error("Error uploading file");
         return;
       }
-
       toast.success("Video uploaded successfully");
 
-      await captionVideo(uploadedUrl);
-
+      await captionVideo(cid);
       toast.success("Caption generation job created");
 
-      const fetchCaptions = async () => {
-        try {
-          const captions = await pollForVideoCaptions(uploadedUrl);
-          if (captions.length > 0) {
-            console.log("Captions found:", captions);
+      const cidData = await getCidData(cid);
+      if (cidData?.url) {
+        setVideoUrl(cidData.url);
+      } else {
+        throw new Error("Couldn't load video data");
+      }
 
-            // TODO: Set Summary
-            setSummary("");
-
-            toast.success("Caption generated successfully");
-          } else {
-            throw "No captions found after all attempts";
-          }
-        } catch (error) {
-          throw error;
-        }
-      };
-
-      fetchCaptions();
+      const captions = await pollForVideoCaptions(cid);
+      if (captions.length > 0) {
+        setSummary(captions[0].caption);
+        toast.success("Caption generated successfully");
+      } else {
+        throw new Error("No captions found after all attempts");
+      }
     } catch (error) {
-      console.error("Error fetching captions:", error);
+      console.error("Error during upload or caption generation:", error);
       toast.error("Error during upload or caption generation");
     }
   }, [uploadFile, captionVideo]);
 
+  useEffect(() => {
+    return () => {
+      URL.revokeObjectURL(videoUrl);
+    };
+  }, [videoUrl]);
+
   const parsedSummary = summary
-    ? Array.isArray(JSON.parse(summary))
-      ? JSON.parse(summary)
-      : [summary]
+    ? (() => {
+        try {
+          const parsed = JSON.parse(summary);
+          return Array.isArray(parsed) ? parsed : [summary];
+        } catch (error) {
+          return [summary];
+        }
+      })()
     : ["Error: Empty summary"];
 
   return (
@@ -102,20 +109,20 @@ const VideoProcessingPage = () => {
           ) : (
             <FileInfo
               file={file}
-              setUrl={setUrl}
+              setCID={setCID}
               setFile={setFile}
               uploading={uploading}
             />
           )}
           {uploading && <p className="mt-6">Uploading...</p>}
-          {url && <VideoPlayer url={url} />}
+          {videoUrl && <VideoPlayer url={videoUrl} />}
           <UploadWithCaptionButton
             file={file}
-            url={url}
+            cid={cid}
             uploading={uploading}
             handleUploadAndGenerateCaption={handleUploadAndGenerateCaption}
           />
-          {url &&
+          {videoUrl &&
             (summary ? (
               <CaptionGenerationSection
                 summary={summary}
@@ -161,7 +168,7 @@ const FileUploadArea = ({ inputFile, handleChange }: FileUploadAreaProps) => (
   </div>
 );
 
-const FileInfo = ({ file, setUrl, setFile, uploading }: FileInfoProps) => (
+const FileInfo = ({ file, setCID, setFile, uploading }: FileInfoProps) => (
   <div className="flex flex-col items-center justify-center">
     <p className="mb-2 text-sm">
       {file.name} will be uploaded.{" "}
@@ -171,7 +178,7 @@ const FileInfo = ({ file, setUrl, setFile, uploading }: FileInfoProps) => (
       <X
         className="w-5 h-5 self-end cursor-pointer"
         onClick={() => {
-          setUrl("");
+          setCID("");
           setFile(null);
         }}
       />
@@ -181,12 +188,12 @@ const FileInfo = ({ file, setUrl, setFile, uploading }: FileInfoProps) => (
 
 const UploadWithCaptionButton = ({
   file,
-  url,
+  cid,
   uploading,
   handleUploadAndGenerateCaption,
 }: UploadWithCaptionButtonProps) => (
   <>
-    {!url && (
+    {!cid && (
       <Button
         disabled={!file || uploading}
         onClick={handleUploadAndGenerateCaption}
