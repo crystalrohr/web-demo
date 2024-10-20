@@ -15,11 +15,7 @@ const VideoQueueManager = () => {
     getIncompleteVideoCaptionTasksDeps,
   } = useCrystalRohrProtocol();
 
-  console.log("called out");
-
   const fetchIncompleteTasks = async () => {
-    console.log("called");
-
     try {
       const incompleteTasks = await getIncompleteVideoCaptionTasks();
       console.log(incompleteTasks);
@@ -66,28 +62,10 @@ const VideoQueueManager = () => {
   ) => {
     if (currentCID) {
       try {
-        const formData = new FormData();
-        formData.append("audio", extractedAudio); // audioFile should be a File or Blob object
-        formData.append("model_id", "your_model_id_here"); // Replace with actual model ID
-
-        const options = {
-          method: "POST",
-          headers: {
-            Authorization: "Bearer <token>",
-            // Don't set Content-Type header, it will be set automatically
-          },
-          body: formData,
-        };
-
-        fetch("https://dream-gateway.livepeer.cloud/audio-to-text", options)
-          .then((response) => response.json())
-          .then((response) => console.log(response))
-          .catch((err) => console.error(err));
-        const audioSummary = "TODO";
         const message = await fetch("/api/vision", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ capturedImages, audioSummary }),
+          body: JSON.stringify({ capturedImages, extractedAudio }),
         }).then((res) => res.json());
         await completeCaptionVideo(message);
         toast.success("Caption Job Successful");
