@@ -356,58 +356,72 @@ export const useCrystalRohrProtocol = () => {
         const nodeAddress = keylessAccount.accountAddress.toString();
 
         const requestedQuery = `
-        query {
-          events(
-            where: {
-              type: {_eq: "${moduleAddress}::${name}::VideoCaptionRequested"},
-              account_address: {_eq: "0x0000000000000000000000000000000000000000000000000000000000000000"},
-              data: {_contains: {node_address: "${nodeAddress}"}}
+          query {
+            events(
+              where: {
+                type: {_eq: "${moduleAddress}::${name}::VideoCaptionRequested"},
+                account_address: {_eq: "0x0000000000000000000000000000000000000000000000000000000000000000"},
+                data: {_contains: {node_address: "${nodeAddress}"}}
+              }
+              order_by: {transaction_block_height: desc}
+            ) {
+              data
             }
-            order_by: {transaction_block_height: desc}
-          ) {
-            data
           }
-        }
-      `;
-
-        const requestedResponse = await fetchGraphQLData(
-          GRAPHQL_ENDPOINT,
-          requestedQuery
-        );
-        const requestedEvents: Omit<VideoCaptionEvent, "caption">[] =
-          requestedResponse.data.events.map((event: any) => event.data);
+        `;
 
         const completedQuery = `
-        query {
-          events(
-            where: {
-              type: {_eq: "${moduleAddress}::${name}::VideoCaptionCompleted"},
-              account_address: {_eq: "0x0000000000000000000000000000000000000000000000000000000000000000"},
-              data: {_contains: {node_address: "${nodeAddress}"}}
+          query {
+            events(
+              where: {
+                type: {_eq: "${moduleAddress}::${name}::VideoCaptionCompleted"},
+                account_address: {_eq: "0x0000000000000000000000000000000000000000000000000000000000000000"},
+                data: {_contains: {node_address: "${nodeAddress}"}}
+              }
+              order_by: {transaction_block_height: desc}
+            ) {
+              data
             }
-            order_by: {transaction_block_height: desc}
-          ) {
-            data
           }
-        }
-      `;
+        `;
 
-        const completedResponse = await fetchGraphQLData(
-          GRAPHQL_ENDPOINT,
-          completedQuery
-        );
+        const [requestedResponse, completedResponse] = await Promise.all([
+          fetchGraphQLData(GRAPHQL_ENDPOINT, requestedQuery),
+          fetchGraphQLData(GRAPHQL_ENDPOINT, completedQuery),
+        ]);
+
+        const requestedEvents: Omit<VideoCaptionEvent, "caption">[] =
+          requestedResponse.data.events.map((event: any) => event.data);
         const completedEvents: VideoCaptionEvent[] =
           completedResponse.data.events.map((event: any) => event.data);
 
-        // Filter out completed captions to get incomplete tasks
-        const incompleteTasks = requestedEvents.filter(
-          (requested) =>
-            !completedEvents.some(
-              (completed) =>
-                completed.user_address === requested.user_address &&
-                completed.ipfs_hash === requested.ipfs_hash
-            )
-        );
+        // Count occurrences of requested and completed tasks
+        const requestedCounts = new Map<string, number>();
+        const completedCounts = new Map<string, number>();
+
+        requestedEvents.forEach((event) => {
+          const key = `${event.user_address}-${event.ipfs_hash}`;
+          requestedCounts.set(key, (requestedCounts.get(key) || 0) + 1);
+        });
+
+        completedEvents.forEach((event) => {
+          const key = `${event.user_address}-${event.ipfs_hash}`;
+          completedCounts.set(key, (completedCounts.get(key) || 0) + 1);
+        });
+
+        // Reconstruct incomplete tasks
+        const incompleteTasks: Omit<VideoCaptionEvent, "caption">[] = [];
+
+        requestedEvents.forEach((event) => {
+          const key = `${event.user_address}-${event.ipfs_hash}`;
+          let requestedCount = requestedCounts.get(key) || 0;
+          const completedCount = completedCounts.get(key) || 0;
+
+          if (requestedCount > completedCount) {
+            incompleteTasks.push(event);
+            requestedCounts.set(key, requestedCount - 1);
+          }
+        });
 
         return incompleteTasks;
       } catch (err) {
