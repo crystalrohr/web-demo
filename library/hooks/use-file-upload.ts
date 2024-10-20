@@ -1,9 +1,10 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
+
 import { pinata } from "@/services/pinata";
 
 const useFileUpload = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [url, setUrl] = useState<string>("");
+  const [cid, setCID] = useState<string>("");
   const [uploading, setUploading] = useState<boolean>(false);
 
   const uploadFile = useCallback(
@@ -19,21 +20,11 @@ const useFileUpload = () => {
 
       try {
         setUploading(true);
-        const [keyData, upload] = await Promise.all([
-          fetch("/api/key").then((res) => res.json()),
-          pinata.upload
-            .file(_file)
-            .key((await fetch("/api/key").then((res) => res.json())).JWT),
-        ]);
-
-        const url = await fetch("/api/sign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cid: upload.cid }),
-        }).then((res) => res.json());
-
-        setUrl(url);
-        return url;
+        const { cid } = await pinata.upload
+          .file(_file)
+          .key((await fetch("/api/key").then((res) => res.json())).JWT);
+        setCID(cid);
+        return cid;
       } catch (e) {
         console.error("Error uploading file:", e);
         throw new Error("Trouble uploading file");
@@ -48,7 +39,15 @@ const useFileUpload = () => {
     setFile(e.target.files?.[0] || null);
   }, []);
 
-  return { file, setFile, url, setUrl, uploading, uploadFile, handleChange };
+  return {
+    file,
+    setFile,
+    cid,
+    setCID,
+    uploading,
+    uploadFile,
+    handleChange,
+  };
 };
 
 export default useFileUpload;
