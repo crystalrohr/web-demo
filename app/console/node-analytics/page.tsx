@@ -4,8 +4,8 @@ import dynamic from "next/dynamic";
 import React, { useLayoutEffect, useRef, useState } from "react";
 import { GlobeMethods } from "react-globe.gl";
 
-import VideoQueueManager from "@/components/molecules/video-queue-manager";
 import { cn } from "@/utils";
+import VideoQueueManager from "@/components/organisms/video-queue-manager";
 
 const Globe = dynamic(() => import("@/components/organisms/wrapped-globe"), {
   ssr: false,
