@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 
 import AudioVideoMiner from "@/components/molecules/audio-video-miner";
@@ -6,8 +6,9 @@ import { useCrystalRohrProtocol } from "@/hooks/use-crystalrohr-protocol";
 import usePollingEffect from "@/hooks/use-polling-effect";
 
 const VideoQueueManager = () => {
-  const [cidQueue, setCIDQueue] = useState<Set<string>>(new Set());
+  const [cidQueue, setCIDQueue] = useState<string[]>([]);
   const [currentCID, setCurrentCID] = useState<string | null>(null);
+  const lastProcessedCIDs = useRef<string[]>([]);
 
   const {
     completeCaptionVideo,
@@ -19,13 +20,14 @@ const VideoQueueManager = () => {
     try {
       const incompleteTasks = await getIncompleteVideoCaptionTasks();
       console.log(incompleteTasks);
-      setCIDQueue((prevQueue) => {
-        const newQueue = new Set(prevQueue);
-        incompleteTasks.forEach((task) => {
-          newQueue.add(task.ipfs_hash);
-        });
-        return newQueue;
-      });
+
+      // Filter out CIDs that are in the last 3 processed CIDs
+      const filteredTasks = incompleteTasks.filter(
+        (task) => !lastProcessedCIDs.current.includes(task.ipfs_hash)
+      );
+
+      // Update the queue with the new filtered tasks
+      setCIDQueue(filteredTasks.map((task) => task.ipfs_hash));
     } catch (error) {
       console.error("Error fetching incomplete tasks:", error);
     }
@@ -45,14 +47,16 @@ const VideoQueueManager = () => {
   }, [startPolling, stopPolling]);
 
   useEffect(() => {
-    if (cidQueue.size > 0 && !currentCID) {
-      const nextCID = Array.from(cidQueue)[0];
+    if (cidQueue.length > 0 && !currentCID) {
+      const nextCID = cidQueue[0];
       setCurrentCID(nextCID);
-      setCIDQueue((prevQueue) => {
-        const newQueue = new Set(prevQueue);
-        newQueue.delete(nextCID);
-        return newQueue;
-      });
+      setCIDQueue((prevQueue) => prevQueue.slice(1));
+
+      // Update the last processed CIDs
+      lastProcessedCIDs.current = [
+        nextCID,
+        ...lastProcessedCIDs.current.slice(0, 2),
+      ];
     }
   }, [cidQueue, currentCID]);
 
@@ -62,12 +66,17 @@ const VideoQueueManager = () => {
   ) => {
     if (currentCID) {
       try {
-        const message = await fetch("/api/vision", {
+        const formData = new FormData();
+        capturedImages.forEach((image) =>
+          formData.append("capturedImages", image)
+        );
+        formData.append("extractedAudio", extractedAudio, "audio.wav");
+        const response = await fetch("/api/vision", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ capturedImages, extractedAudio }),
-        }).then((res) => res.json());
-        await completeCaptionVideo(message);
+          body: formData,
+        });
+        const message = await response.json();
+        await completeCaptionVideo(message.cid);
         toast.success("Caption Job Successful");
       } catch (error) {
         console.error("Error completing video caption:", error);
@@ -85,8 +94,8 @@ const VideoQueueManager = () => {
       <div>
         <h3>Upcoming Videos:</h3>
         <ul>
-          {Array.from(cidQueue).map((task, index) => (
-            <li key={index}>{task}</li>
+          {cidQueue.map((cid, index) => (
+            <li key={index}>{cid}</li>
           ))}
         </ul>
       </div>
