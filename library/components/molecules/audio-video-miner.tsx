@@ -15,6 +15,8 @@ const AudioVideoMiner = ({
 }: AudioVideoMinerProps): JSX.Element => {
   const [isVideoVisible, setIsVideoVisible] = useState(true);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+
   const { getCidData } = useGetCID();
   const {
     canvasRef,
@@ -30,24 +32,38 @@ const AudioVideoMiner = ({
     lastEvent,
   } = useCaptureStills();
 
+  // Fix audio issue and use audioBlob from useAudioExtractor()
   useEffect(() => {
-    if (lastEvent === "all_complete") {
-      onComplete(capturedImages, new Blob([], { type: "audio/mpeg" }));
+    if (lastEvent === "all_complete" && videoBlob) {
+      onComplete(capturedImages, videoBlob);
     }
-  }, [lastEvent, processStatus, capturedImages, onComplete]);
+  }, [lastEvent, processStatus, capturedImages, onComplete, videoBlob]);
 
   useEffect(() => {
-    if (cid) {
-      startPolling();
-      getCidData(cid).then((response) => {
-        if (response?.url) {
-          setVideoUrl(response.url);
-        } else {
-          // TODO: onError
-          alert("video url didn't load");
+    const fetchData = async () => {
+      if (cid) {
+        startPolling();
+        try {
+          const response = await getCidData(cid);
+          if (response?.url) {
+            setVideoUrl(response.url);
+            if (response.data instanceof Blob) {
+              setVideoBlob(response.data);
+            } else {
+              console.error("Invalid data type for audio extraction");
+            }
+          } else {
+            // TODO: Implement proper error handling
+            console.error("Video URL didn't load");
+          }
+        } catch (error) {
+          console.error("Error fetching CID data:", error);
         }
-      });
-    }
+      }
+    };
+
+    fetchData();
+
     return () => {
       stopPolling();
     };
@@ -76,8 +92,9 @@ const AudioVideoMiner = ({
             <video
               crossOrigin="anonymous"
               ref={videoRef}
-              controls
+              controls={false}
               autoPlay
+              muted
               preload="none"
               width="560px"
               height="315px"
