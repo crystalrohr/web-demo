@@ -36,6 +36,7 @@ interface CaptionGenerationSectionProps {
   parsedSummary: string[];
 }
 
+// TODO: show prev caption history
 const VideoProcessingPage = () => {
   const [summary, setSummary] = useState<string>("");
   const [videoUrl, setVideoUrl] = useState<string>("");
@@ -70,8 +71,14 @@ const VideoProcessingPage = () => {
 
       const captions = await pollForVideoCaptions(cid);
       if (captions.length > 0) {
-        setSummary(captions[0].caption);
-        toast.success("Caption generated successfully");
+        const captionCid = captions[0].caption;
+        if (/^ba.{57}$/.test(captionCid)) {
+          const responseJSON = await getCidData(captionCid);
+          const response = JSON.parse(responseJSON?.data as string).content[0]
+            .text;
+          setSummary(response);
+          toast.success("Caption generated successfully");
+        }
       } else {
         throw new Error("No captions found after all attempts");
       }
@@ -80,12 +87,6 @@ const VideoProcessingPage = () => {
       toast.error("Error during upload or caption generation");
     }
   }, [uploadFile, captionVideo]);
-
-  useEffect(() => {
-    return () => {
-      URL.revokeObjectURL(videoUrl);
-    };
-  }, [videoUrl]);
 
   const parsedSummary = summary
     ? (() => {
@@ -154,7 +155,7 @@ const FileUploadArea = ({ inputFile, handleChange }: FileUploadAreaProps) => (
           <span className="font-semibold">Click to upload</span> use only public
           videos
         </p>
-        <p className="text-xs text-gray-400">MP4, AVI, or MOV (MAX. 800MB)</p>
+        <p className="text-xs text-gray-400">MP4, AVI, or MOV (MAX. 15MB)</p>
       </div>
       <input
         id="video-upload"
@@ -163,6 +164,7 @@ const FileUploadArea = ({ inputFile, handleChange }: FileUploadAreaProps) => (
         className="hidden"
         onChange={handleChange}
         accept="video/mp4,video/x-m4v,video/*"
+        max-size="15728640"
       />
     </label>
   </div>
@@ -210,20 +212,17 @@ const CaptionGenerationSection = ({
   parsedSummary,
 }: CaptionGenerationSectionProps) => (
   <div className="mt-8">
-    <h3 className="text-xl font-semibold mb-4">Caption Generation Progress</h3>
-    <div className="mt-6">
-      <h4 className="text-lg font-semibold mb-2">Generated Summary:</h4>
-      {summary ? (
-        <div className="space-y-4">
-          {parsedSummary.map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
-          ))}
-          <SpeechControls text={parsedSummary.join(" ")} />
-        </div>
-      ) : (
-        <p>Generating summary...</p>
-      )}
-    </div>
+    <h3 className="text-xl font-semibold mb-4">Generated Summary:</h3>
+    {summary ? (
+      <div className="space-y-4">
+        {parsedSummary.map((paragraph, index) => (
+          <p key={index}>{paragraph}</p>
+        ))}
+        <SpeechControls text={parsedSummary.join(" ")} />
+      </div>
+    ) : (
+      <p>Generating summary...</p>
+    )}
   </div>
 );
 
