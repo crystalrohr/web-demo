@@ -86,7 +86,7 @@ const VideoProcessingPage = () => {
       console.error("Error during upload or caption generation:", error);
       toast.error("Error during upload or caption generation");
     }
-  }, [uploadFile, captionVideo]);
+  }, [uploadFile, captionVideo, getCidData, pollForVideoCaptions]);
 
   const parsedSummary = summary
     ? (() => {
@@ -174,7 +174,7 @@ const FileInfo = ({ file, setCID, setFile, uploading }: FileInfoProps) => (
   <div className="flex flex-col items-center justify-center">
     <p className="mb-2 text-sm">
       {file.name} will be uploaded.{" "}
-      <span className="font-semibold">Click "Upload" to start, or cancel</span>
+      <span className="font-semibold">Click &quot;Upload&quot; to start, or cancel</span>
     </p>
     {!uploading && (
       <X
