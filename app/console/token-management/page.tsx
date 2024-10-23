@@ -72,7 +72,7 @@ const TokenCard = ({
   </Card>
 );
 
-export const TokenManagement = () => {
+const TokenManagement = () => {
   const { stake, unstake, mintROHR, mintAPT } = useCrystalRohrProtocol();
   const [stakeAmount, setStakeAmount] = useState("");
   const [unstakeAmount, setUnstakeAmount] = useState("");
