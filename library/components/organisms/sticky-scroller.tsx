@@ -5,42 +5,42 @@ import { StickyScroll } from "./sticky-scroll-reveal";
 
 const content = [
   {
-    title: "Collaborative Editing",
+    title: "Visual Indexing and Sequencing Engine (VISE)",
     description:
-      "Work together in real time with your team, clients, and stakeholders. Collaborate on documents, share ideas, and make decisions quickly. With our platform, you can streamline your workflow and increase productivity.",
+      "Our core VISE technology breaks down videos frame-by-frame, analyzing visual content with audio context. This creates precise timestamps with detailed descriptions, letting blind users navigate exactly to the moments they need.",
     content: (
       <div className="h-full w-full bg-[linear-gradient(to_bottom_right,var(--cyan-500),var(--emerald-500))] flex items-center justify-center text-white">
-        Collaborative Editing
+        VISE Engine
       </div>
     ),
   },
   {
-    title: "Real time changes",
+    title: "Frame Sequencing",
     description:
-      "See changes as they happen. With our platform, you can track every modification in real time. No more confusion about the latest version of your project. Say goodbye to the chaos of version control and embrace the simplicity of real-time updates.",
+      "VISE processes continuous frame sequences to understand visual movement and change. This enables powerful search - find exact moments in videos based on actual visual content, not just basic tags or titles.",
     content: (
       <div className="h-full w-full bg-[linear-gradient(to bottom right, var(--pink-500), var(--indigo-500))] flex items-center justify-center text-white">
-        A Picture can be here
+        Frame Sequencing
       </div>
     ),
   },
   {
-    title: "Version control",
+    title: "Network Processing",
     description:
-      "Experience real-time updates and never stress about version control again. Our platform ensures that you're always working on the most recent version of your project, eliminating the need for constant manual updates. Stay in the loop, keep your team aligned, and maintain the flow of your work without any interruptions.",
+      "Our decentralized network powers VISE's detailed frame analysis. Each node contributes processing power to create comprehensive visual descriptions, making video content truly accessible.",
     content: (
       <div className="h-full w-full bg-[linear-gradient(to_bottom_right,var(--orange-500),var(--yellow-500))] flex items-center justify-center text-white">
-        Version control
+        Network Processing
       </div>
     ),
   },
   {
-    title: "Running out of content",
+    title: "Reward System",
     description:
-      "Experience real-time updates and never stress about version control again. Our platform ensures that you're always working on the most recent version of your project, eliminating the need for constant manual updates. Stay in the loop, keep your team aligned, and maintain the flow of your work without any interruptions.",
+      "Power the future of video accessibility by running a VISE processing node. Your computational contribution helps analyze frames and create detailed descriptions, earning rewards while making content accessible worldwide.",
     content: (
       <div className="h-full w-full bg-[linear-gradient(to_bottom_right,var(--cyan-500),var(--emerald-500))] flex items-center justify-center text-white">
-        Running out of content
+        Reward System
       </div>
     ),
   },
