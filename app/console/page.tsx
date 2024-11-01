@@ -13,7 +13,7 @@ const page = () => {
             here to access a faucet.
           </p>
         </div>
-        <StandbyButton link={"/console/dashboard"} />
+        <StandbyButton link={"/console/node-analytics"} />
       </div>
       <p className=" font-outfit p-4 text-sm">© Crystalrohr 2024</p>
     </div>
