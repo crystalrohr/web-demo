@@ -75,7 +75,7 @@ forge script script/DeployCrystalrohr.s.sol:DeployCrystalrohr \
 
 ## Contributing
 
-Contributions to CrystalRohr are welcome! Please feel free to submit a Pull Request.
+Contributions to Crystalrohr are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
