@@ -40,7 +40,7 @@ const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
   const isPathMatched = pathPatterns.some((pattern) => pattern.test(pathname));
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={cn(inter.className, outfit.variable, atyp.variable)}>
         <RootProvider>
           <>
@@ -53,8 +53,8 @@ const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
               </>
             )}
           </>
+          <Toaster />
         </RootProvider>
-        <Toaster />
       </body>
     </html>
   );
