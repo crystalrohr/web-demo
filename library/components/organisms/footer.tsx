@@ -9,7 +9,7 @@ const Footer = () => {
         </p>
         <LinkButton
           className="bg-[#138FA8] active:bg-[#138FA8] py-3 px-6 rounded-[32px] font-outfit font-medium gap-2"
-          href="/console"
+          href="/node-console"
           text={"Get started right now!"}
           buttonImg="sort.svg"
         />

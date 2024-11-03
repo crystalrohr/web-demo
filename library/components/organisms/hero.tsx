@@ -53,7 +53,7 @@ const Hero = () => {
             />
             <LinkButton
               className="bg-transparent active:bg-transparent border-white border flex gap-2 py-3 px-6 rounded-[32px] items-center font-outfit font-medium"
-              href="/console"
+              href="/node-console"
               text={"Become a Node"}
               buttonImg="sort.svg"
             />

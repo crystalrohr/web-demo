@@ -35,7 +35,7 @@ const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
   // Check if the current pathname matches any of the path patterns
   // Define an array of path patterns
   // e.g /^\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+\/somewhere\/[a-zA-Z0-9_-]+$/
-  const pathPatterns = [/^\/console+$/, /^\/console\/.*$/, /^\/redirect+$/];
+  const pathPatterns = [/^\/node-console+$/, /^\/node-console\/.*$/, /^\/redirect+$/];
 
   const isPathMatched = pathPatterns.some((pattern) => pattern.test(pathname));
 
