@@ -1,6 +1,5 @@
 "use client";
 
-// import Image from "next/image";
 import { StickyScroll } from "./sticky-scroll-reveal";
 
 const content = [
@@ -55,8 +54,7 @@ function StickyScroller() {
             A run down on how Crystalrohr works
           </p>
           <p className="w-[50ch] text-sm">
-            Transform your videos into GIFs with our fast, easy, and free GIF
-            maker. Convert to GIFs in just a few taps.
+            A decentralized video captioning protocol for the visually impaired.
           </p>
         </div>
       </div>
