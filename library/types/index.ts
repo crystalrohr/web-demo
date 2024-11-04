@@ -29,3 +29,9 @@ export type VideoCaptionEvent = {
   node_address: string;
   caption: string;
 };
+
+
+export type NetworkModalContext = {
+  network: string;
+  ignoredNetworks?: string[]
+};
