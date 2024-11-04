@@ -212,7 +212,7 @@ const ConsolePage = () => {
                 To secure the network, you&apos;ll need to stake some coins.
                 Click{" "}
                 <Link
-                  href={"/faucet"}
+                  href={"/token-management"}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[#138FA8]"
