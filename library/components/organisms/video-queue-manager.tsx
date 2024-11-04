@@ -87,7 +87,6 @@ const VideoQueueManager = () => {
 
   return (
     <div>
-      <h2>Video Queue Manager</h2>
       {currentCID && (
         <AudioVideoMiner cid={currentCID} onComplete={handleMiningComplete} />
       )}
