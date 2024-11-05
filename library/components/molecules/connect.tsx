@@ -6,7 +6,7 @@ import NetworkSelect, {
   NetworkId,
   NetworkIds,
 } from "@/components/molecules/network-select";
-import useStore from "@/store";
+import { useConnectorHelper } from "@/hooks/use-connector-helper";
 import { ConnectorId, NetworkModalContext } from "@/types";
 import SignInWithKeyless from "./connector-aptos";
 import { WagmiConnection, WagmiConnector } from "./connector-evm";
@@ -90,7 +90,7 @@ const connectionHandlers: ConnectionHandlers = {
 };
 
 const Connect = () => {
-  const { currentConnection } = useStore();
+  const { currentConnection } = useConnectorHelper(true);
   const { network, connectorId } = currentConnection;
 
   const [networkContext, setNetworkContext] = useState<NetworkModalContext>({
