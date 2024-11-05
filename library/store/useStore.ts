@@ -15,6 +15,6 @@ export const useStore = create<State>()(
     (set, get, store) => ({
       ...createGlobalAppStateSlice(set, get, store),
     }),
-    { name: "Dekan Capital" }
+    { name: "Crystalrohr" }
   )
 );
