@@ -52,6 +52,24 @@ type AdaptiveModalProps = {
   onContextChange?: (context: any) => void;
 };
 
+/* <AdaptiveModal
+trigger={<Button disabled>Connect</Button>}
+title="Select Network"
+actions={[
+  {
+    id: "ethereum",
+    label: "Ethereum",
+    onClick: (context) =>
+      console.log("Selected Ethereum"),
+  },
+  {
+    id: "polygon",
+    label: "Polygon",
+    onClick: (context) => console.log("Selected Polygon"),
+  },
+]}
+/> */
+
 const AdaptiveModal = ({
   trigger,
   initialPage,
@@ -123,9 +141,7 @@ const AdaptiveModal = ({
   const modalContent = (
     <>
       <ScrollArea className="max-h-[60vh] overflow-auto">
-        <div className="p-4">
-          <Content />
-        </div>
+        <Content />
       </ScrollArea>
       <div className="p-4 border-t">
         <Button variant="outline" onClick={handleClose} className="w-full">
@@ -143,7 +159,9 @@ const AdaptiveModal = ({
         </DialogTrigger>
         <DialogContent className={`sm:max-w-[500px] ${className}`}>
           <DialogHeader>
-            <DialogTitle>{currentPage?.title || title}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-center p-4">
+              {currentPage?.title || title}
+            </DialogTitle>
           </DialogHeader>
           {modalContent}
         </DialogContent>
@@ -156,7 +174,9 @@ const AdaptiveModal = ({
       <DrawerTrigger asChild>{trigger || <Button>Open</Button>}</DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="text-left">
-          <DrawerTitle>{currentPage?.title || title}</DrawerTitle>
+          <DrawerTitle className="text-2xl font-bold text-center mb-6">
+            {currentPage?.title || title}
+          </DrawerTitle>
         </DrawerHeader>
         {modalContent}
       </DrawerContent>
