@@ -14,7 +14,6 @@ import { Button } from "@/components/atoms/button";
 import { NetworkId } from "@/components/molecules/network-select";
 import { useConnectorHelper } from "@/hooks/use-connector-helper";
 import { useMounted } from "@/hooks/use-mounted";
-import useStore from "@/store";
 import { ellipsisAddress, formatNetworkName, getChain } from "@/utils";
 
 interface ConnectorProps {
@@ -24,12 +23,12 @@ interface ConnectorProps {
 export const WagmiConnector = ({ network }: ConnectorProps) => {
   const { open, setOpen } = useModal();
   const isMounted = useMounted();
-  const { handleNewConnection } = useConnectorHelper();
+  const { handleNewConnection, currentConnection, disconnectCurrent } =
+    useConnectorHelper();
   const { chain, connector, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
   const { reset } = useConnect$1();
-  const { currentConnection } = useStore();
 
   const [isActive, setIsActive] = useState(false);
 
@@ -53,6 +52,8 @@ export const WagmiConnector = ({ network }: ConnectorProps) => {
   const handleDisconnect = useCallback(() => {
     setOpen(false);
     disconnect();
+    reset();
+    disconnectCurrent();
   }, [setOpen, disconnect]);
 
   useEffect(() => {
@@ -90,7 +91,7 @@ export const WagmiConnector = ({ network }: ConnectorProps) => {
   );
 };
 
-export const WagmiConnection = ({ network }: ConnectorProps) => {
+export const WagmiConnection = ({}: ConnectorProps) => {
   const { address, isConnected } = useAccount();
   const isMounted = useMounted();
   const { data: ensName } = useEnsName({
@@ -107,6 +108,4 @@ export const WagmiConnection = ({ network }: ConnectorProps) => {
       </button>
     );
   }
-
-  return <WagmiConnector network={network} />;
 };
