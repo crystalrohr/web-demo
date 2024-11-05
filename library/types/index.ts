@@ -1,3 +1,5 @@
+import { NetworkId } from "@/components/molecules/network-select";
+
 export enum ChainType {
   APTOS = "APTOS",
   ALGORAND = "ALGORAND",
@@ -30,8 +32,15 @@ export type VideoCaptionEvent = {
   caption: string;
 };
 
-
 export type NetworkModalContext = {
-  network: string;
-  ignoredNetworks?: string[]
+  network: NetworkId;
+  ignoredNetworks?: NetworkId[];
 };
+
+export type ConnectorId = "wagmi" | "keyless" | "zkLogin" | "petra";
+
+export interface ConnectionInfo {
+  network: NetworkId | null;
+  connectorId: ConnectorId | null;
+  address: string | null;
+}
