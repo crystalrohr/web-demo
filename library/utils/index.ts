@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import * as chains from "viem/chains";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -9,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 export function ellipsisAddress(address: string, length = 4) {
   return `${address.substring(0, 2 + length)}...${address.substring(
     address.length - length,
-    address.length,
+    address.length
   )}`;
 }
 
@@ -77,4 +78,31 @@ export function isValidUrl(url: string) {
   } catch (e) {
     return false;
   }
+}
+
+type Chain = (typeof chains)[keyof typeof chains];
+
+/**
+ * Gets the chain object for the given chain id or name.
+ * @param chainIdOrName - Chain id or name of the target EVM chain.
+ * @returns Viem's chain object.
+ */
+export function getChain(chainIdOrName: number | string): Chain {
+  for (const chain of Object.values(chains)) {
+    if (
+      typeof chainIdOrName === "number"
+        ? chain.id === chainIdOrName
+        : chain.name.toLowerCase() === chainIdOrName.toLowerCase()
+    ) {
+      return chain;
+    }
+  }
+  throw new Error(`Chain ${chainIdOrName} not found`);
+}
+
+export function formatNetworkName(network: string): string {
+  return network
+    .split("-")
+    .map((word) => word.toLowerCase())
+    .join(" ");
 }
