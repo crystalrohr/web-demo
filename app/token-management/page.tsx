@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
@@ -14,7 +17,6 @@ import NetworkSelect, {
   NetworkIds,
 } from "@/components/molecules/network-select";
 import { NetworkModalContext } from "@/types";
-import { useEffect, useState } from "react";
 
 const ConfirmPage = ({
   context,
@@ -30,7 +32,9 @@ const ConfirmPage = ({
     <Button
       onClick={() => {
         onClose();
-        onNavigate("select");
+        setTimeout(() => {
+          onNavigate("select");
+        }, 100);
       }}
     >
       Confirm
@@ -40,12 +44,12 @@ const ConfirmPage = ({
 
 const TokenManagementPage = () => {
   const [toNetwork, setToNetwork] = useState<NetworkModalContext>({
-    ignoredNetworks: [NetworkIds["base-sepolia"], NetworkIds.ethereum],
+    ignoredNetworks: [NetworkIds.ethereum],
   } as NetworkModalContext);
 
   useEffect(() => {
     if (toNetwork.network) {
-      alert(`Network changed to: ${toNetwork.network}`);
+      toast.success(`Network changed to: ${toNetwork.network}`);
     }
   }, [toNetwork]);
 
@@ -120,23 +124,7 @@ const TokenManagementPage = () => {
                 <div className="flex items-center gap-5 w-full">
                   <div className="grid w-full items-center gap-2">
                     <Label htmlFor="network">From</Label>
-                    <AdaptiveModal
-                      trigger={<Button disabled>Connect</Button>}
-                      title="Select Network"
-                      actions={[
-                        {
-                          id: "ethereum",
-                          label: "Ethereum",
-                          onClick: (context) =>
-                            console.log("Selected Ethereum"),
-                        },
-                        {
-                          id: "polygon",
-                          label: "Polygon",
-                          onClick: (context) => console.log("Selected Polygon"),
-                        },
-                      ]}
-                    />
+                    <Button disabled>Connect</Button>
                   </div>
 
                   <div className="grid w-full items-center gap-2">
