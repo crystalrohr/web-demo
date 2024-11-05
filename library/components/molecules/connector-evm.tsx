@@ -1,48 +1,88 @@
 "use client";
 
 import { useModal } from "connectkit";
-import { useAccount, useEnsName } from "wagmi";
+import { useCallback, useEffect, useState } from "react";
+import {
+  useAccount,
+  useConnect as useConnect$1,
+  useDisconnect,
+  useEnsName,
+  useSwitchChain,
+} from "wagmi";
 
 import { Button } from "@/components/atoms/button";
+import { NetworkId } from "@/components/molecules/network-select";
+import { useConnectorHelper } from "@/hooks/use-connector-helper";
 import { useMounted } from "@/hooks/use-mounted";
-import { ellipsisAddress } from "@/utils";
+import useStore from "@/store";
+import { ellipsisAddress, formatNetworkName, getChain } from "@/utils";
 
-const EVMConnectButton = () => {
-  const isMounted = useMounted();
+interface ConnectorProps {
+  network: NetworkId;
+}
+
+export const WagmiConnector = ({ network }: ConnectorProps) => {
   const { open, setOpen } = useModal();
-  const { address, isConnected, chain } = useAccount();
+  const isMounted = useMounted();
+  const { handleNewConnection } = useConnectorHelper();
+  const { chain, connector, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { switchChain } = useSwitchChain();
+  const { reset } = useConnect$1();
+  const { currentConnection } = useStore();
 
-  const { data: ensName } = useEnsName({
-    chainId: 1,
-    address: address,
-  });
+  const [isActive, setIsActive] = useState(false);
 
-  const show = () => {
-    setOpen(true);
-  };
+  const chainName = formatNetworkName(network);
+  const { network: currentNetwork } = currentConnection;
 
-  const hide = () => {
+  const handleChainSwitch = useCallback(() => {
+    const targetChain = getChain(chainName);
+    switchChain({ connector, chainId: targetChain.id });
+  }, [chainName, connector, switchChain]);
+
+  const handleConnect = useCallback(() => {
     setOpen(false);
-  };
+    disconnect();
+    reset();
+    setTimeout(() => {
+      setIsActive(true);
+    }, 50);
+  }, [disconnect, reset, setOpen]);
 
-  // Early returns
+  const handleDisconnect = useCallback(() => {
+    setOpen(false);
+    disconnect();
+  }, [setOpen, disconnect]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    setOpen(true);
+    handleNewConnection(network, "wagmi", "");
+  }, [isActive, setOpen, handleNewConnection, network]);
+
+  useEffect(() => {
+    if (currentNetwork === network && isConnected) {
+      handleChainSwitch();
+    }
+  }, [isActive, handleChainSwitch, currentNetwork, network, isConnected]);
+
   if (!isMounted) return null;
 
-  // Default button rendering
-  if (isConnected && address) {
+  if (chain?.name.toLowerCase() === chainName) {
     return (
       <Button
-        onClick={show}
+        onClick={handleDisconnect}
         className="bg-zinc-800 text-white hover:bg-zinc-700 rounded-lg py-3"
       >
-        {ensName || ellipsisAddress(address)}
+        Disconnect
       </Button>
     );
   }
 
   return (
     <Button
-      onClick={show}
+      onClick={handleConnect}
       className="bg-zinc-800 text-white hover:bg-zinc-700 rounded-lg py-3"
     >
       Connect Wallet
@@ -50,4 +90,23 @@ const EVMConnectButton = () => {
   );
 };
 
-export default EVMConnectButton;
+export const WagmiConnection = ({ network }: ConnectorProps) => {
+  const { address, isConnected } = useAccount();
+  const isMounted = useMounted();
+  const { data: ensName } = useEnsName({
+    chainId: 1,
+    address: address,
+  });
+
+  if (!isMounted) return null;
+
+  if (isConnected && address) {
+    return (
+      <button className="bg-[#138FA8] active:bg-[#138FA8] font-outfit font-[16px] text-[white] px-6 rounded-[32px] py-3.5">
+        {ensName || ellipsisAddress(address)}
+      </button>
+    );
+  }
+
+  return <WagmiConnector network={network} />;
+};
