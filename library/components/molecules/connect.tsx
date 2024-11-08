@@ -8,7 +8,7 @@ import NetworkSelect, {
 } from "@/components/molecules/network-select";
 import { useConnectorHelper } from "@/hooks/use-connector-helper";
 import { ConnectorId, NetworkModalContext } from "@/types";
-import SignInWithKeyless from "./connector-aptos";
+import { KeylessConnector, KeylessConnection } from "./connector-aptos";
 import { WagmiConnection, WagmiConnector } from "./connector-evm";
 
 const Connector = ({
@@ -53,7 +53,7 @@ const Connector = ({
     return (
       <div className="flex flex-col p-4 gap-4">
         <p>Aptos</p>
-        <SignInWithKeyless />
+        <KeylessConnector network={context.network} />
         <Button onClick={() => onNavigate("select")}>Back</Button>
       </div>
     );
@@ -84,9 +84,9 @@ const connectionHandlers: ConnectionHandlers = {
   wagmi: ({ network }: { network: NetworkId }) => (
     <WagmiConnection network={network} />
   ),
-  keyless: () => <SignInWithKeyless />,
-  zkLogin: () => <SignInWithKeyless />,
-  petra: () => <SignInWithKeyless />,
+  keyless: () => <KeylessConnection />,
+  zkLogin: () => <div />,
+  petra: () => <div />,
 };
 
 const Connect = () => {
