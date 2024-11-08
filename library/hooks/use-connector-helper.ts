@@ -1,7 +1,8 @@
+import { useEffect, useRef } from "react";
+
 import { NetworkId } from "@/components/molecules/network-select";
 import useStore from "@/store";
 import { ConnectorId } from "@/types";
-import { useEffect, useRef } from "react";
 
 type DisconnectHandlers = {
   [key in ConnectorId]: (provider: any) => Promise<void>;
@@ -11,7 +12,7 @@ type ReconnectionHandlers = {
   [key in ConnectorId]: () => Promise<boolean>;
 };
 
-const RECONNECTION_TIMEOUT = 3000; // 3 seconds timeout
+export const RECONNECTION_TIMEOUT = 10_000; // 3 seconds timeout
 
 const disconnectHandlers: DisconnectHandlers = {
   wagmi: async (provider: any) => {
@@ -55,7 +56,23 @@ const reconnectionHandlers: ReconnectionHandlers = {
     }
   },
   keyless: async () => {
-    return false; // Implement keyless reconnection check
+    try {
+      const startTime = Date.now();
+
+      // If storedJwt or storedEkp—wallet creation keys—are not available on login, check again
+      while (Date.now() - startTime < RECONNECTION_TIMEOUT - 1000) {
+        const storedJwt = localStorage.getItem("@aptos/jwt");
+        const storedEkp = localStorage.getItem("@aptos/ephemeral_key_pair");
+
+        if (storedJwt && storedEkp) return true;
+
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
+      }
+
+      return false;
+    } catch {
+      return false;
+    }
   },
   zkLogin: async () => {
     return false; // Implement zkLogin reconnection check
@@ -132,7 +149,7 @@ export const useConnectorHelper = (verifyOnMount: boolean = false) => {
         }
       } catch (error) {
         console.warn("Connection verification failed:", error);
-        console.log("Disconnecting current connection...");
+        console.log("Disconnecting current connection due to error...");
         clearCurrentConnection();
       }
     };
