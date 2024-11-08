@@ -44,3 +44,7 @@ export interface ConnectionInfo {
   connectorId: ConnectorId | null;
   address: string | null;
 }
+
+export interface ConnectorProps {
+  network: NetworkId;
+}

@@ -11,14 +11,10 @@ import {
 } from "wagmi";
 
 import { Button } from "@/components/atoms/button";
-import { NetworkId } from "@/components/molecules/network-select";
 import { useConnectorHelper } from "@/hooks/use-connector-helper";
 import { useMounted } from "@/hooks/use-mounted";
+import { ConnectorProps } from "@/types";
 import { ellipsisAddress, formatNetworkName, getChain } from "@/utils";
-
-interface ConnectorProps {
-  network: NetworkId;
-}
 
 export const WagmiConnector = ({ network }: ConnectorProps) => {
   const { open, setOpen } = useModal();
@@ -66,7 +62,7 @@ export const WagmiConnector = ({ network }: ConnectorProps) => {
     if (currentNetwork === network && isConnected) {
       handleChainSwitch();
     }
-  }, [isActive, handleChainSwitch, currentNetwork, network, isConnected]);
+  }, [handleChainSwitch, currentNetwork, network, isConnected]);
 
   if (!isMounted) return null;
 
