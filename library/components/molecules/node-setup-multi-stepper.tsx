@@ -1,6 +1,11 @@
-import MultiStepLoader from "@/components/atoms/multi-step-loader";
 import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import MultiStepLoader from "@/components/atoms/multi-step-loader";
+import { RECONNECTION_TIMEOUT } from "@/hooks/use-connector-helper";
+import useStore from "@/store";
 
 export type StepAction = {
   run: () => Promise<boolean>;
@@ -25,15 +30,40 @@ export const NodeSetupMultiStepper = ({
   const [isRunning, setIsRunning] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  const router = useRouter();
+  const { currentConnection } = useStore();
+
   const loadingStates: LoadingState[] = [
     {
       text: "Checking connection",
       action: {
         run: async () => {
-          // Simulate connection check
           try {
-            // Replace with actual connection check
-            await new Promise((resolve) => setTimeout(resolve, 5000));
+            const startTime = Date.now();
+
+            while (Date.now() - startTime < RECONNECTION_TIMEOUT - 1000) {
+              if (currentConnection.network) {
+                return true;
+              }
+              await new Promise((resolve) => setTimeout(resolve, 1_000));
+            }
+
+            return false;
+          } catch {
+            return false;
+          }
+        },
+        onFailure: () => {
+          toast.error("Not connected—Please connect and try again.");
+          router.push("/");
+        },
+      },
+    },
+    {
+      text: "Node connected",
+      action: {
+        run: async () => {
+          try {
             return true;
           } catch {
             return false;
@@ -46,42 +76,22 @@ export const NodeSetupMultiStepper = ({
       },
     },
     {
-      text: "Node connected",
-      action: {
-        run: async () => {
-          // Verify node connection
-          try {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            return true;
-          } catch {
-            return false;
-          }
-        },
-        onFailure: () => {
-          window.location.href = "/"; // Redirect home on failure
-        },
-      },
-    },
-    {
       text: "Checking account stake",
       action: {
         run: async () => {
-          // Check if account has stake
           try {
-            // Replace with actual stake check
-            const hasStake = true; // This would be dynamic
+            const hasStake = false; // This would be dynamic
             return hasStake;
           } catch {
             return false;
           }
         },
         onFailure: () => {
-          // Show stake UI
           window.dispatchEvent(new CustomEvent("showStakeUI"));
         },
       },
     },
-    { text: "Saving state" },
+    { text: "Stake fulfilled" },
     { text: "Initializing resources" },
     {
       text: "Setup complete",
@@ -91,7 +101,6 @@ export const NodeSetupMultiStepper = ({
           return true;
         },
         onSuccess: () => {
-          // Show join button
           window.dispatchEvent(new CustomEvent("showJoinButton"));
           onComplete?.();
         },
@@ -99,9 +108,23 @@ export const NodeSetupMultiStepper = ({
     },
   ];
 
-  const runAction = async (action: StepAction) => {
+  const runAction = async (
+    action: StepAction,
+    didCancel: { current: boolean }
+  ) => {
     try {
+      // If already cancelled, don't proceed
+      if (didCancel.current) {
+        return true;
+      }
+
       const result = await action.run();
+
+      // Check if cancelled after the async operation
+      if (didCancel.current) {
+        return true;
+      }
+
       if (result) {
         action.onSuccess?.();
         return true;
@@ -110,38 +133,57 @@ export const NodeSetupMultiStepper = ({
         return action.isOptional || false;
       }
     } catch {
-      action.onFailure?.();
+      // Only call onFailure if not cancelled
+      if (!didCancel.current) {
+        action.onFailure?.();
+      }
       return action.isOptional || false;
     }
   };
 
   useEffect(() => {
+    // Use an object reference for didCancel to ensure it's properly shared
+    const didCancel = { current: false };
+
     const processCurrentState = async () => {
       if (!isRunning || hasError) return;
 
       const currentStep = loadingStates[currentState];
 
       if (currentStep.action) {
-        const success = await runAction(currentStep.action);
+        const success = await runAction(currentStep.action, didCancel);
         if (!success && !currentStep.action.isOptional) {
           setIsRunning(false);
           return;
         }
       }
 
-      // Move to next state after delay
-      if (currentState < loadingStates.length - 1) {
+      // Only proceed if not cancelled
+      if (!didCancel.current && currentState < loadingStates.length - 1) {
         setTimeout(() => {
-          setCurrentState((prev) => prev + 1);
+          if (!didCancel.current) {
+            setCurrentState((prev) => prev + 1);
+          }
         }, 2000);
-      } else {
+      } else if (!didCancel.current) {
         setIsRunning(false);
         onComplete?.();
       }
     };
 
     processCurrentState();
-  }, [currentState, isRunning, hasError]);
+
+    return () => {
+      didCancel.current = true;
+    };
+  }, [
+    currentState,
+    isRunning,
+    hasError,
+    loadingStates,
+    currentConnection,
+    onComplete,
+  ]);
 
   return (
     <AnimatePresence mode="wait">
