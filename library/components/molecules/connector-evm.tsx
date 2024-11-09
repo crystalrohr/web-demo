@@ -17,56 +17,47 @@ import { ConnectorProps } from "@/types";
 import { ellipsisAddress, formatNetworkName, getChain } from "@/utils";
 
 export const WagmiConnector = ({ network }: ConnectorProps) => {
-  const { open, setOpen } = useModal();
-  const isMounted = useMounted();
-  const { handleNewConnection, currentConnection, disconnectCurrent } =
-    useConnectorHelper();
-  const { chain, connector, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
-  const { switchChain } = useSwitchChain();
-  const { reset } = useConnect$1();
-
   const [isActive, setIsActive] = useState(false);
 
+  const { setOpen } = useModal();
+  const isMounted = useMounted();
+  const { handleNewConnection, disconnectCurrent } = useConnectorHelper();
+  const { isConnected, chain } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { reset } = useConnect$1();
+
   const chainName = formatNetworkName(network);
-  const { network: currentNetwork } = currentConnection;
-
-  const handleChainSwitch = useCallback(() => {
-    const targetChain = getChain(chainName);
-    switchChain({ connector, chainId: targetChain.id });
-  }, [chainName, connector, switchChain]);
-
-  const handleConnect = useCallback(() => {
-    setOpen(false);
-    disconnect();
-    reset();
-    setTimeout(() => {
-      setIsActive(true);
-    }, 50);
-  }, [disconnect, reset, setOpen]);
+  const isCorrectChain = chain?.name.toLowerCase() === chainName;
 
   const handleDisconnect = useCallback(() => {
     setOpen(false);
     disconnect();
     reset();
     disconnectCurrent();
-  }, [setOpen, disconnect]);
+  }, [disconnect, reset, setOpen, disconnectCurrent]);
 
-  useEffect(() => {
-    if (!isActive) return;
-    setOpen(true);
-    handleNewConnection(network, "wagmi", "");
-  }, [isActive, setOpen, handleNewConnection, network]);
+  const handleConnect = useCallback(async () => {
+    setOpen(false);
+    disconnect();
+    reset();
+    setTimeout(() => {
+      setIsActive(true);
+    }, 1000);
+  }, [setIsActive, disconnect, reset, setOpen]);
 
+  // Handle successful connection
   useEffect(() => {
-    if (currentNetwork === network && isConnected) {
-      handleChainSwitch();
-    }
-  }, [handleChainSwitch, currentNetwork, network, isConnected]);
+    const handleSuccessfulConnection = async () => {
+      if (!isActive) return;
+      setOpen(true);
+      await handleNewConnection(network, "wagmi", "");
+    };
+    handleSuccessfulConnection();
+  }, [setOpen, isActive, handleNewConnection, network]);
 
   if (!isMounted) return null;
 
-  if (chain?.name.toLowerCase() === chainName) {
+  if (isCorrectChain && isConnected) {
     return (
       <Button
         onClick={handleDisconnect}
@@ -87,13 +78,40 @@ export const WagmiConnector = ({ network }: ConnectorProps) => {
   );
 };
 
-export const WagmiConnection = ({}: ConnectorProps) => {
-  const { address, isConnected } = useAccount();
+export const WagmiConnection = ({ network }: ConnectorProps) => {
+  const { address, isConnected, chain, connector } = useAccount();
   const isMounted = useMounted();
   const { data: ensName } = useEnsName({
     chainId: 1,
     address: address,
   });
+  const { switchChain } = useSwitchChain();
+  const { currentConnection } = useConnectorHelper();
+
+  const chainName = formatNetworkName(network);
+  const { network: currentNetwork } = currentConnection;
+  const isCorrectChain = chain?.name.toLowerCase() === chainName;
+
+  const handleChainSwitch = useCallback(async () => {
+    if (!connector) return;
+    const targetChain = getChain(chainName);
+    try {
+      switchChain({ connector, chainId: targetChain.id });
+    } catch (error) {
+      console.error("Failed to switch chain:", error);
+    }
+  }, [chainName, connector, switchChain]);
+
+  // Handle chain switching for existing connections
+  useEffect(() => {
+    const handleExistingConnection = async () => {
+      if (currentNetwork === network && isConnected && !isCorrectChain) {
+        await handleChainSwitch();
+      }
+    };
+
+    handleExistingConnection();
+  }, [currentNetwork, network, isConnected, isCorrectChain, handleChainSwitch]);
 
   if (!isMounted) return null;
 
@@ -104,4 +122,6 @@ export const WagmiConnection = ({}: ConnectorProps) => {
       </button>
     );
   }
+
+  return null;
 };
