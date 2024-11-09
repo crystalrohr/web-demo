@@ -12,7 +12,7 @@ type ReconnectionHandlers = {
   [key in ConnectorId]: () => Promise<boolean>;
 };
 
-export const RECONNECTION_TIMEOUT = 10_000; // 3 seconds timeout
+export const RECONNECTION_TIMEOUT = 10_000; // 10 seconds timeout
 
 const disconnectHandlers: DisconnectHandlers = {
   wagmi: async (provider: any) => {
@@ -45,12 +45,22 @@ const disconnectHandlers: DisconnectHandlers = {
   },
 };
 
+// TODO: Pass in providers and make, extract the "check again's" into a function.
 const reconnectionHandlers: ReconnectionHandlers = {
   wagmi: async () => {
     try {
-      // Check if wallet is still connected
-      const isConnected = window?.ethereum?.selectedAddress;
-      return !!isConnected;
+      const startTime = Date.now();
+
+      // Check if wallet is still connected, if not available, check again
+      while (Date.now() - startTime < RECONNECTION_TIMEOUT - 1000) {
+        const isConnected = window?.ethereum?.selectedAddress;
+
+        if (isConnected) return true;
+
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
+      }
+
+      return false;
     } catch {
       return false;
     }
@@ -118,6 +128,10 @@ export const useConnectorHelper = (verifyOnMount: boolean = false) => {
       console.log("Connection state:", initialConnection);
 
       const reconnectionHandler = reconnectionHandlers[connectorId];
+
+      const d = await reconnectionHandler();
+
+      console.log("Recconection State!!!!!!!:", d);
 
       if (!reconnectionHandler) {
         console.warn(
