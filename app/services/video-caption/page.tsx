@@ -1,7 +1,7 @@
 "use client";
 
 import { UploadCloud, X } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/atoms/button";
