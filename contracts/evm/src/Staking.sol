@@ -4,11 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-interface IRohrToken is IERC20 {
-    function burn(address from, uint256 amount) external;
-    function mint(address account, uint256 value) external;
-}
+import {RohrToken} from "./Token.sol";
 
 contract CrystalrohrStaking is Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -18,7 +14,7 @@ contract CrystalrohrStaking is Ownable {
     uint256 public constant OPERATION_PROOFS_DENOMINATOR = 10;
 
     // State variables
-    IRohrToken public rohrToken;
+    RohrToken public rohrToken;
     uint256 private totalStaked;
     mapping(address => uint256) public stakedBalances;
     EnumerableSet.AddressSet private stakers;
@@ -36,9 +32,9 @@ contract CrystalrohrStaking is Ownable {
 
     constructor(
         address _rohrToken,
-        address initialOwner
-    ) Ownable(initialOwner) {
-        rohrToken = IRohrToken(_rohrToken);
+        address _initialOwner
+    ) Ownable(_initialOwner) {
+        rohrToken = RohrToken(_rohrToken);
     }
 
     function stake(address staker, uint256 amount) external onlyOwner {

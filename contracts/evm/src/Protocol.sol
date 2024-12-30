@@ -4,26 +4,15 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
-interface IRohrToken is IERC20 {
-    function burn(address from, uint256 amount) external;
-}
-
-interface ICrystalrohrStaking {
-    function stake(address staker, uint256 amount) external;
-    function unstake(address staker, uint256 amount) external;
-    function claimRewards(address staker, uint256 rewardNumerator) external;
-    function isValidStaker(address staker) external view returns (bool);
-    function getStakedAmount(address staker) external view returns (uint256);
-    function getTotalStaked() external view returns (uint256);
-}
+import {CrystalrohrStaking} from "./Staking.sol";
+import {RohrToken} from "./Token.sol";
 
 contract CrystalrohrProtocol {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // Constants
-    uint256 public constant VIDEO_OP_PRICE = 100_000_000;
+    uint256 public constant VIDEO_OP_PRICE = 100_000_000; // 1 rohr
 
     // Structs
     struct Video {
@@ -42,8 +31,8 @@ contract CrystalrohrProtocol {
     }
 
     // State variables
-    ICrystalrohrStaking public stakingContract;
-    IRohrToken public rohrToken;
+    CrystalrohrStaking public stakingContract;
+    RohrToken public rohrToken;
     EnumerableSet.AddressSet private activeNodes;
     mapping(address => Node) public nodes;
     mapping(address => Video) public userVideos;
@@ -74,8 +63,8 @@ contract CrystalrohrProtocol {
     error VideoHashMismatch();
 
     constructor(address _rohrToken, address _stakingContract) {
-        rohrToken = IRohrToken(_rohrToken);
-        stakingContract = ICrystalrohrStaking(_stakingContract);
+        rohrToken = RohrToken(_rohrToken);
+        stakingContract = CrystalrohrStaking(_stakingContract);
     }
 
     function stake(uint256 amount) external {
