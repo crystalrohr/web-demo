@@ -13,6 +13,9 @@ export interface IProtocolService {
   unstake(amount: number): Promise<any>;
   claimRewards(): Promise<any>;
 
+  // Minting functions
+  mintROHR(amount: number, address: `0x${string}`): Promise<any>;
+
   // Video caption related functions
   captionVideo(ipfsHash: string): Promise<any>;
   completeCaptionVideo(caption: string): Promise<any>;
@@ -21,8 +24,8 @@ export interface IProtocolService {
   getIncompleteVideoCaptionTasks(): Promise<any>;
 
   // Utility functions
-  validStaker(nodeAddress: `0x${string}`): Promise<boolean>;
-  stakedAmount(): Promise<number>;
+  isValidStaker(nodeAddress: `0x${string}`): Promise<boolean>;
+  getStakedAmount(nodeAddress: `0x${string}`): Promise<number>;
 }
 
 export type VideoCaptionEvent = {
@@ -33,6 +36,7 @@ export type VideoCaptionEvent = {
 };
 
 export type NetworkModalContext = {
+  name: string;
   network: NetworkId;
   ignoredNetworks?: NetworkId[];
 };
