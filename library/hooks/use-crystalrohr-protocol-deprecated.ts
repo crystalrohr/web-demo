@@ -5,8 +5,8 @@ import { useCallback } from "react";
 import { useAptosKeyless } from "@/providers/keyless";
 import { useAptosSurf } from "@/providers/surf";
 import { VideoCaptionEvent } from "@/types";
-import CRYSTALROHR_PROTOCOL_ABI from "@/types/move/crystalrohr-protocol";
-import ROHR_ABI from "@/types/move/rohr";
+import CRYSTALROHR_PROTOCOL_ABI from "@/types/contracts/move/crystalrohr-protocol";
+import ROHR_ABI from "@/types/contracts/move/rohr";
 
 const GRAPHQL_ENDPOINT = "https://api.devnet.aptoslabs.com/v1/graphql";
 
