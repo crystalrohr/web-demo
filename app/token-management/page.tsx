@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useAccount } from "wagmi";
 
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
@@ -16,7 +17,10 @@ import AdaptiveModal from "@/components/molecules/adaptive-modal";
 import NetworkSelect, {
   NetworkIds,
 } from "@/components/molecules/network-select";
+import { useConnectorHelper } from "@/hooks/use-connector-helper";
 import { NetworkModalContext } from "@/types";
+import { formatNetworkName } from "@/utils";
+import { useCrystalRohrProtocol } from "@/hooks/use-crystalrohr-protocol";
 
 const ConfirmPage = ({
   context,
@@ -43,15 +47,35 @@ const ConfirmPage = ({
 );
 
 const TokenManagementPage = () => {
+  const [walletAddress, setWalletAddress] = useState("");
   const [toNetwork, setToNetwork] = useState<NetworkModalContext>({
     ignoredNetworks: [NetworkIds.ethereum],
   } as NetworkModalContext);
+
+  const { currentConnection } = useConnectorHelper();
+  const { network, connectorId } = currentConnection;
+  const account = useAccount();
+  const { mintROHR } = useCrystalRohrProtocol();
 
   useEffect(() => {
     if (toNetwork.network) {
       toast.success(`Network changed to: ${toNetwork.network}`);
     }
   }, [toNetwork]);
+
+  useEffect(() => {
+    switch (connectorId) {
+      case "wagmi":
+        setWalletAddress(account.address || "");
+        break;
+      case "keyless":
+        break;
+      case "zkLogin":
+        break;
+      default:
+        setWalletAddress("");
+    }
+  }, [connectorId, account]);
 
   return (
     <div className="relative flex flex-col items-center min-h-screen p-8 bg-gradient-to-b from-cyan-600 to-[#000011]">
@@ -79,14 +103,18 @@ const TokenManagementPage = () => {
                   Get ROHR Testnet Tokens!
                 </p>
                 <p className="text-base font-semibold font-outfit">
-                  Faucet mints ROHR on Aptos, Base Sepolia, Sepolia and Sui
+                  Faucet mints ROHR on connected network
                 </p>
               </div>
 
               <div className="flex flex-col items-center gap-5 w-full">
                 <div className="grid w-full items-center gap-2">
                   <Label htmlFor="network">Network</Label>
-                  <Input disabled id="network" />
+                  <Input
+                    disabled
+                    id="network"
+                    value={formatNetworkName(network) || "Not connected"}
+                  />
                 </div>
 
                 <div className="grid w-full items-center gap-2">
@@ -96,7 +124,7 @@ const TokenManagementPage = () => {
 
                 <div className="grid w-full items-center gap-2">
                   <Label htmlFor="wallet">Wallet Address</Label>
-                  <Input disabled id="wallet" />
+                  <Input disabled id="wallet" value={walletAddress} />
                 </div>
               </div>
 
@@ -116,7 +144,7 @@ const TokenManagementPage = () => {
                   Bridge ROHR Across Chains!
                 </p>
                 <p className="text-base font-semibold font-outfit">
-                  Move your ROHR across Aptos, Base Sepolia, Sepolia and Sui
+                  Move your ROHR across supported networks
                 </p>
               </div>
 
