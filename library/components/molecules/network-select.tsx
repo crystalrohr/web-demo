@@ -1,16 +1,22 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 
+import ImageWithFallback from "@/components/molecules/image-fallback";
 import { NetworkModalContext } from "@/types";
 
 export const networks = [
   { id: "ethereum", name: "Ethereum", color: "bg-purple-100" },
+  {
+    id: "binance-smart-chain-testnet",
+    name: "BSC Testnet",
+    color: "bg-yellow-400",
+  },
   { id: "base-sepolia", name: "Base Sepolia", color: "bg-blue-500" },
   { id: "sepolia", name: "Sepolia", color: "bg-purple-200" },
   { id: "aptos", name: "Aptos", color: "bg-blue-400" },
   { id: "sui", name: "Sui", color: "bg-yellow-300" },
+  { id: "anvil", name: "Anvil", color: "bg-gray-300" },
 ] as const;
 
 // Create a union type of network IDs
@@ -31,7 +37,7 @@ const NetworkSelect = ({
   context,
 }: {
   onNavigate: (pageId: string) => void;
-  updateContext: (newContext: any) => void;
+  updateContext: (newContext: NetworkModalContext) => void;
   context: NetworkModalContext;
 }) => {
   const ignoredNetworks = context.ignoredNetworks || [];
@@ -52,17 +58,21 @@ const NetworkSelect = ({
               } ${network.color}`}
               onClick={() => {
                 setSelectedNetwork(network.id);
-                updateContext({ network: network.id });
+                updateContext({
+                  ...context,
+                  name: network.name,
+                  network: network.id,
+                });
                 onNavigate("confirm");
               }}
             >
               <div className="flex flex-col items-center justify-center h-full p-6">
                 <div className="w-16 h-16 relative mb-4">
-                  <Image
+                  <ImageWithFallback
+                    key={network.id}
+                    alt={network.id}
                     src={`/supported-networks/${network.id}.webp`}
-                    alt={network.name}
-                    fill
-                    className="object-contain"
+                    fallbackSrc={"/icon.png"}
                   />
                 </div>
                 <div className="font-medium text-lg">{network.name}</div>

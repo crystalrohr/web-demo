@@ -1,92 +1,18 @@
 import { useCallback, useMemo, useState } from "react";
 
-import { Button } from "@/components/atoms/button";
 import AdaptiveModal from "@/components/molecules/adaptive-modal";
+import { KeylessConnection } from "@/components/molecules/connector-aptos";
+import { WagmiConnection } from "@/components/molecules/connector-evm";
+import Connector from "@/components/molecules/connector";
 import NetworkSelect, {
   NetworkId,
   NetworkIds,
 } from "@/components/molecules/network-select";
 import { useConnectorHelper } from "@/hooks/use-connector-helper";
 import { ConnectorId, NetworkModalContext } from "@/types";
-import { KeylessConnector, KeylessConnection } from "./connector-aptos";
-import { WagmiConnection, WagmiConnector } from "./connector-evm";
-
-const Connector = ({
-  context,
-  onNavigate,
-  onClose,
-}: {
-  context: NetworkModalContext;
-  onNavigate: (pageId: string) => void;
-  onClose: () => void;
-}) => {
-  const evm: NetworkId[] = [
-    NetworkIds.ethereum,
-    NetworkIds.sepolia,
-    NetworkIds["base-sepolia"],
-  ];
-
-  if (evm.includes(context.network)) {
-    return (
-      <div className="flex flex-col p-4 gap-4">
-        <p>
-          {context.network
-            .split("-")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ")}
-        </p>
-
-        <WagmiConnector key={context.network} network={context.network} />
-
-        <Button
-          onClick={() => {
-            onNavigate("select");
-          }}
-        >
-          Back
-        </Button>
-      </div>
-    );
-  }
-
-  if (context.network === NetworkIds.aptos) {
-    return (
-      <div className="flex flex-col p-4 gap-4">
-        <p>Aptos</p>
-        <KeylessConnector network={context.network} />
-        <Button onClick={() => onNavigate("select")}>Back</Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col p-4 gap-4">
-      <p>
-        Sorry{" "}
-        {context.network
-          .split("-")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ")}{" "}
-        is not supported yet
-      </p>
-      <Button onClick={() => onNavigate("select")}>
-        Select another network
-      </Button>
-    </div>
-  );
-};
 
 type ConnectionHandlers = {
   [key in ConnectorId]: ({ network }: { network: NetworkId }) => JSX.Element;
-};
-
-const connectionHandlers: ConnectionHandlers = {
-  wagmi: ({ network }: { network: NetworkId }) => (
-    <WagmiConnection network={network} />
-  ),
-  keyless: () => <KeylessConnection />,
-  zkLogin: () => <div />,
-  petra: () => <div />,
 };
 
 const Connect = () => {
@@ -97,13 +23,20 @@ const Connect = () => {
     ignoredNetworks: [NetworkIds.ethereum],
   } as NetworkModalContext);
 
-  const Connection = useMemo(
-    () =>
-      connectorId && connectionHandlers[connectorId]
-        ? connectionHandlers[connectorId]
-        : () => null,
-    [connectorId]
-  );
+  const Connection = useMemo(() => {
+    const handlers: ConnectionHandlers = {
+      wagmi: ({ network }: { network: NetworkId }) => (
+        <WagmiConnection network={network} />
+      ),
+      keyless: () => <KeylessConnection />,
+      zkLogin: () => <div />,
+      petra: () => <div />,
+    };
+
+    return connectorId && handlers[connectorId]
+      ? handlers[connectorId]
+      : () => null;
+  }, [connectorId]);
 
   const handleContextChange = useCallback(
     (newContext: NetworkModalContext) => setNetworkContext(newContext),
