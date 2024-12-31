@@ -10,6 +10,7 @@ import NetworkSelect, {
 } from "@/components/molecules/network-select";
 import { useConnectorHelper } from "@/hooks/use-connector-helper";
 import { ConnectorId, NetworkModalContext } from "@/types";
+import { formatNetworkName } from "@/utils";
 
 type ConnectionHandlers = {
   [key in ConnectorId]: ({ network }: { network: NetworkId }) => JSX.Element;
@@ -49,12 +50,7 @@ const Connect = () => {
       <AdaptiveModal
         trigger={
           <button className="font-outfit font-[16px] bg-black text-[white] px-6 rounded-[32px] py-3.5">
-            {network
-              ? network
-                  .split("-")
-                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(" ")
-              : "Connect"}
+            {network ? formatNetworkName(network) : "Connect"}
           </button>
         }
         initialPage="select"

@@ -1,8 +1,13 @@
 import { Button } from "@/components/atoms/button";
 import { KeylessConnector } from "@/components/molecules/connector-aptos";
 import { WagmiConnector } from "@/components/molecules/connector-evm";
-import {networks, NetworkId, NetworkIds } from "@/components/molecules/network-select";
+import {
+  networks,
+  NetworkId,
+  NetworkIds,
+} from "@/components/molecules/network-select";
 import { NetworkModalContext } from "@/types";
+import { formatNetworkName } from "@/utils";
 
 const Connector = ({
   context,
@@ -24,12 +29,7 @@ const Connector = ({
   if (evm.includes(context.network)) {
     return (
       <div className="flex flex-col p-4 gap-4">
-        <p>
-          {context.network
-            .split("-")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ")}
-        </p>
+        <p>{formatNetworkName(context.network)}</p>
 
         <WagmiConnector key={context.network} network={context.network} />
 
@@ -56,14 +56,7 @@ const Connector = ({
 
   return (
     <div className="flex flex-col p-4 gap-4">
-      <p>
-        Sorry{" "}
-        {context.network
-          .split("-")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ")}{" "}
-        is not supported yet
-      </p>
+      <p>Sorry {formatNetworkName(context.network)} is not supported yet</p>
       <Button onClick={() => onNavigate("select")}>
         Select another network
       </Button>
