@@ -1,6 +1,6 @@
 const data = {
   name: "Rohr",
-  address: "",
+  address: "0x",
   abi: [
     {
       type: "constructor",

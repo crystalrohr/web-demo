@@ -1,6 +1,6 @@
 const data = {
   name: "Crystalrohr Staking",
-  address: "",
+  address: "0x",
   abi: [
     {
       type: "constructor",
