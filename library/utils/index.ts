@@ -100,7 +100,10 @@ export function getChain(chainIdOrName: number | string): Chain {
   throw new Error(`Chain ${chainIdOrName} not found`);
 }
 
-export function formatNetworkName(network: string): string {
+export function formatNetworkName(network: string | null): string {
+  if (!network) {
+    return "";
+  }
   return network
     .split("-")
     .map((word) => word.toLowerCase())
