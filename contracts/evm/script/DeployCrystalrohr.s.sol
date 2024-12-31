@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {Script} from "forge-std/Script.sol";
-import {console} from "forge-std/console.sol";
+import {Script, console} from "forge-std/Script.sol";
 
 import {RohrToken} from "../src/Token.sol";
 import {CrystalrohrStaking} from "../src/Staking.sol";
@@ -46,11 +45,9 @@ contract DeployCrystalrohr is Script {
         console.log("Staking:", address(staking));
         console.log("Protocol:", address(protocol));
 
-
         uint256 balance = deployer.balance;
 
         console.log("Deployer balance:", balance);
-
     }
 
     function verify() public view {
