@@ -21,7 +21,7 @@ export interface IProtocolService {
   completeCaptionVideo(caption: string): Promise<any>;
   getVideoCaptionsByHash(ipfsHash: string): Promise<any>;
   getLastVideoCaption(userAddress: `0x${string}`): Promise<any>;
-  getIncompleteVideoCaptionTasks(): Promise<any>;
+  getIncompleteVideoCaptionTasks(nodeAddress: `0x${string}`): Promise<any>;
 
   // Utility functions
   isValidStaker(nodeAddress: `0x${string}`): Promise<boolean>;

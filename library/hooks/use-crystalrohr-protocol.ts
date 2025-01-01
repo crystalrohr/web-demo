@@ -114,7 +114,10 @@ export const useCrystalRohrProtocol = () => {
     ),
 
     getIncompleteVideoCaptionTasks: useCallback(
-      () => withService((service) => service.getIncompleteVideoCaptionTasks()),
+      (nodeAddress: `0x${string}`) =>
+        withService((service) =>
+          service.getIncompleteVideoCaptionTasks(nodeAddress)
+        ),
       [withService]
     ),
 

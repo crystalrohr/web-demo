@@ -311,7 +311,7 @@ export class SuiProtocolService implements IProtocolService {
     }
   }
 
-  async getIncompleteVideoCaptionTasks(): Promise<
+  async getIncompleteVideoCaptionTasks(nodeAddress: `0x{string}`): Promise<
     Omit<VideoCaptionEvent, "caption">[]
   > {
     if (!this.client || !this.isInitialized || !this.keylessAccount) return [];

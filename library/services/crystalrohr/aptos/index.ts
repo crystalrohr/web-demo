@@ -311,9 +311,9 @@ export class AptosProtocolService implements IProtocolService {
     }
   }
 
-  async getIncompleteVideoCaptionTasks(): Promise<
-    Omit<VideoCaptionEvent, "caption">[]
-  > {
+  async getIncompleteVideoCaptionTasks(
+    nodeAddress: `0x{string}`
+  ): Promise<Omit<VideoCaptionEvent, "caption">[]> {
     if (!this.client || !this.isInitialized || !this.keylessAccount) return [];
 
     try {
