@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useAccount } from "wagmi";
+import { useAccount, useWatchAsset } from "wagmi";
 
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
@@ -18,9 +18,10 @@ import NetworkSelect, {
   NetworkIds,
 } from "@/components/molecules/network-select";
 import { useConnectorHelper } from "@/hooks/use-connector-helper";
-import { NetworkModalContext } from "@/types";
-import { formatNetworkName } from "@/utils";
 import { useCrystalRohrProtocol } from "@/hooks/use-crystalrohr-protocol";
+import { NetworkModalContext } from "@/types";
+import rohr from "@/types/contracts/evm/rohr";
+import { formatNetworkName } from "@/utils";
 
 const ConfirmPage = ({
   context,
@@ -47,7 +48,7 @@ const ConfirmPage = ({
 );
 
 const TokenManagementPage = () => {
-  const [walletAddress, setWalletAddress] = useState("");
+  const [walletAddress, setWalletAddress] = useState<`0x${string}`>();
   const [toNetwork, setToNetwork] = useState<NetworkModalContext>({
     ignoredNetworks: [NetworkIds.ethereum],
   } as NetworkModalContext);
@@ -56,6 +57,7 @@ const TokenManagementPage = () => {
   const { network, connectorId } = currentConnection;
   const account = useAccount();
   const { mintROHR } = useCrystalRohrProtocol();
+  const { watchAsset } = useWatchAsset();
 
   useEffect(() => {
     if (toNetwork.network) {
@@ -66,14 +68,14 @@ const TokenManagementPage = () => {
   useEffect(() => {
     switch (connectorId) {
       case "wagmi":
-        setWalletAddress(account.address || "");
+        setWalletAddress(account.address);
         break;
       case "keyless":
         break;
       case "zkLogin":
         break;
       default:
-        setWalletAddress("");
+        setWalletAddress(undefined);
     }
   }, [connectorId, account]);
 
@@ -129,10 +131,23 @@ const TokenManagementPage = () => {
               </div>
 
               <button
-                onClick={() => alert("faucet")}
+                onClick={async () => {
+                  if (walletAddress) {
+                    await mintROHR(100, walletAddress);
+                    watchAsset({
+                      type: "ERC20",
+                      options: {
+                        address: rohr.address,
+                        symbol: rohr.name,
+                        decimals: 8,
+                        image: "https://www.crystalrohr.com/icon.png",
+                      },
+                    });
+                  }
+                }}
                 className="w-full bg-[#138FA8] active:bg-[#138FA8] py-3 px-6 rounded-[32px] font-outfit font-medium flex items-center justify-center text-white text-base leading-normal m-0 border-[none] shadow-[0_0px_1px_hsla(0,0%,0%,0.2),0_1px_2px_hsla(0,0%,0%,0.2)] hover:shadow-[0_0px_1px_hsla(0,0%,0%,0.6),0_1px_8px_hsla(0,0%,0%,0.2)] active:shadow-[0_0px_1px_hsla(0,0%,0%,0.4)] active:translate-y-[1px]"
               >
-                Mint ROHR Token
+                Mint 100 ROHR Token
               </button>
             </div>
           </TabsContent>
