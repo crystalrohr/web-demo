@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import MultiStepLoader from "@/components/atoms/multi-step-loader";
-import { RECONNECTION_TIMEOUT } from "@/hooks/use-connector-helper";
-import useStore from "@/store";
+import {
+  RECONNECTION_TIMEOUT,
+  useConnectorHelper,
+} from "@/hooks/use-connector-helper";
+import { useCrystalRohrProtocol } from "@/hooks/use-crystalrohr-protocol";
 
 export type StepAction = {
   run: () => Promise<boolean>;
@@ -30,8 +33,9 @@ export const NodeSetupMultiStepper = ({
   const [isRunning, setIsRunning] = useState(true);
   const [hasError, setHasError] = useState(false);
 
+  const { currentConnection } = useConnectorHelper();
   const router = useRouter();
-  const { currentConnection } = useStore();
+  const { isValidStaker } = useCrystalRohrProtocol();
 
   const loadingStates: LoadingState[] = [
     {
@@ -80,7 +84,7 @@ export const NodeSetupMultiStepper = ({
       action: {
         run: async () => {
           try {
-            const hasStake = false; // This would be dynamic
+            const hasStake = await isValidStaker();
             return hasStake;
           } catch {
             return false;
