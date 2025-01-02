@@ -135,6 +135,7 @@ const ConsolePage = () => {
       await action(Number(amount));
       toast.success(successMessage);
       setAmount("");
+      location.reload();
     } catch (error) {
       toast.error(
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`
