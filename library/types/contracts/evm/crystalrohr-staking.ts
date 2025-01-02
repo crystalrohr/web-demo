@@ -1,6 +1,6 @@
 const data = {
   name: "Crystalrohr Staking",
-  address: "0x",
+  address: "0x60B6Fdb142AFfc43520027efC852C8418a2c436a",
   abi: [
     {
       type: "constructor",

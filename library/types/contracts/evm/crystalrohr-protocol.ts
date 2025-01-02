@@ -1,6 +1,6 @@
 const data = {
   name: "Crystalrohr Protocol",
-  address: "0x",
+  address: "0x52b6622fa8057b2180E0E87B0da9E3a30093751d",
   abi: [
     {
       type: "constructor",
