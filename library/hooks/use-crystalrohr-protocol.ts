@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 
 import { useConnectorHelper } from "@/hooks/use-connector-helper";
 import { useAptosKeyless } from "@/providers/keyless";
@@ -11,17 +11,20 @@ import { IProtocolService } from "@/types";
 
 export const useCrystalRohrProtocol = () => {
   const [service, setService] = useState<IProtocolService | null>(null);
+  const [nodeAddress, setWalletAddress] = useState<`0x${string}`>();
 
   const { currentConnection } = useConnectorHelper();
   const { connectorId } = currentConnection;
   const { data: walletClient } = useWalletClient();
   const { client: aptosClient, isInitialized } = useAptosSurf();
   const { keylessAccount, currentNetwork } = useAptosKeyless();
+  const account = useAccount();
 
   useEffect(() => {
     switch (connectorId) {
       case "wagmi":
         setService(new EVMProtocolService());
+        setWalletAddress(account.address);
         break;
       case "keyless":
         if (aptosClient && keylessAccount) {
@@ -42,6 +45,7 @@ export const useCrystalRohrProtocol = () => {
         break;
       default:
         setService(null);
+        setWalletAddress(undefined);
     }
   }, [
     connectorId,
@@ -54,9 +58,15 @@ export const useCrystalRohrProtocol = () => {
 
   // Helper function to ensure service exists
   const withService = useCallback(
-    <T>(operation: (service: IProtocolService) => Promise<T>) => {
+    <T>(
+      operation: (
+        service: IProtocolService,
+        nodeAddress: `0x${string}`
+      ) => Promise<T>
+    ) => {
       if (!service) throw new Error("No blockchain service available");
-      return operation(service);
+      if (!nodeAddress) throw new Error("No node address not available");
+      return operation(service, nodeAddress);
     },
     [service]
   );
@@ -114,22 +124,26 @@ export const useCrystalRohrProtocol = () => {
     ),
 
     getIncompleteVideoCaptionTasks: useCallback(
-      (nodeAddress: `0x${string}`) =>
-        withService((service) =>
+      () =>
+        withService((service, nodeAddress) =>
           service.getIncompleteVideoCaptionTasks(nodeAddress)
         ),
       [withService]
     ),
 
     isValidStaker: useCallback(
-      (nodeAddress: `0x${string}`) =>
-        withService((service) => service.isValidStaker(nodeAddress)),
+      () =>
+        withService((service, nodeAddress) =>
+          service.isValidStaker(nodeAddress)
+        ),
       [withService]
     ),
 
     getStakedAmount: useCallback(
-      (nodeAddress: `0x${string}`) =>
-        withService((service) => service.getStakedAmount(nodeAddress)),
+      () =>
+        withService((service, nodeAddress) =>
+          service.getStakedAmount(nodeAddress)
+        ),
       [withService]
     ),
   };
