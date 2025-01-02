@@ -16,28 +16,12 @@ import NodeSetupMultiStepper from "@/components/molecules/node-setup-multi-stepp
 import StandbyButton from "@/components/molecules/standby-button";
 import VideoQueueManager from "@/components/organisms/video-queue-manager";
 import { useCrystalRohrProtocol } from "@/hooks/use-crystalrohr-protocol";
+import useStore from "@/store";
+import { formatUnits } from "viem";
 
 const Globe = dynamic(() => import("@/components/organisms/wrapped-globe"), {
   ssr: false,
 });
-
-const ANALYTICS_DATA = [
-  {
-    resource: "Scenes Processed",
-    value: "2.2k",
-    action: { value: "View ↗", call: () => {} },
-  },
-  {
-    resource: "Session Rewards",
-    value: "2.2k",
-    action: { value: "Collect ↗", call: () => {} },
-  },
-  {
-    resource: "Total Staked",
-    value: "2.2k",
-    action: { value: "Stake More ↗", call: () => {} },
-  },
-] as const;
 
 const GLOBE_POINTS = 250;
 const CRYSTAL_TYPES = ["DePIN", "Video", "Caption", "Network"] as const;
@@ -98,9 +82,13 @@ const ConsolePage = () => {
   const [currentView, setCurrentView] = useState("stepper"); // stepper, stake, standby, dashboard
   const globeRef = useRef<GlobeMethods>();
   const [loaded, setLoaded] = useState(false);
-  const { stake, unstake } = useCrystalRohrProtocol();
   const [stakeAmount, setStakeAmount] = useState("");
+  const [stakedAmount, setStakedAmount] = useState(0);
   const [unstakeAmount, setUnstakeAmount] = useState("");
+
+  const { completedCaptions, scenesProcessed } = useStore();
+
+  const { stake, unstake, getStakedAmount } = useCrystalRohrProtocol();
   const { theme } = useTheme();
 
   const gData = useMemo(
@@ -126,6 +114,16 @@ const ConsolePage = () => {
       controls.enableZoom = false;
     }
   }, [loaded]);
+
+  useEffect(() => {
+    if (currentView === "dashboard") {
+      getStakedAmount()
+        .then((amount) =>
+          setStakedAmount(Number(formatUnits(BigInt(amount), 8)))
+        )
+        .catch((error) => console.error("Error getting staked amount:", error));
+    }
+  }, [getStakedAmount, currentView]);
 
   const handleAction = async (
     action: Function,
@@ -257,7 +255,26 @@ const ConsolePage = () => {
                     className="w-full"
                   />
                   <button
-                    onClick={() => stake(parseFloat(stakeAmount))}
+                    onClick={async () => {
+                      try {
+                        await stake(parseFloat(stakeAmount));
+                        toast.success("Stake successful!");
+                        location.reload();
+                      } catch (error) {
+                        const errorMessage = (error as Error).message;
+                        if (errorMessage.includes("0xe450d38c")) {
+                          toast.error(
+                            "Please get tokens from the faucet first"
+                          );
+                        } else if (errorMessage.includes("0xf1bc94d2")) {
+                          toast.error(
+                            "Please stake more tokens—minimum 1 ROHR"
+                          );
+                        } else {
+                          toast.error("Stake failed: " + errorMessage);
+                        }
+                      }
+                    }}
                     className="bg-[#138FA8] active:bg-[#138FA8] py-3 px-6 rounded-[32px] font-outfit font-medium flex items-center justify-center text-white text-base leading-normal m-0 border-[none] shadow-[0_0px_1px_hsla(0,0%,0%,0.2),0_1px_2px_hsla(0,0%,0%,0.2)] hover:shadow-[0_0px_1px_hsla(0,0%,0%,0.6),0_1px_8px_hsla(0,0%,0%,0.2)] active:shadow-[0_0px_1px_hsla(0,0%,0%,0.4)] active:translate-y-[1px]"
                   >
                     Stake ROHR to join
@@ -302,28 +319,47 @@ const ConsolePage = () => {
                         <p className="font-outfit font-semibold text-[#484E62] dark:text-[#B7BDD5]">
                           Completed Captions
                         </p>
-                        <p className="text-4xl font-outfit font-bold">2.2k</p>
+                        <p className="text-4xl font-outfit font-bold">
+                          {completedCaptions}
+                        </p>
                       </div>
                     </Card>
 
-                    {ANALYTICS_DATA.map((item, index) => (
-                      <Card
-                        key={index}
-                        className="flex w-full justify-between p-4 cursor-pointer bg-card text-card-foreground"
-                      >
-                        <div className="flex flex-col gap-6">
-                          <p className="font-outfit font-semibold text-[#484E62] dark:text-[#B7BDD5]">
-                            {item.resource}
-                          </p>
-                          <p className="text-4xl font-outfit font-bold">
-                            {item.value}
-                          </p>
-                        </div>
-                        <p className="font-atyp text-sm text-[#34C759] font-bold">
-                          {item.action.value}
+                    <Card className="flex min-w-80 w-fit flex-row justify-between p-4 bg-card text-card-foreground">
+                      <div className="flex flex-col gap-6">
+                        <p className="font-outfit font-semibold text-[#484E62] dark:text-[#B7BDD5]">
+                          Scenes Processed
                         </p>
-                      </Card>
-                    ))}
+                        <p className="text-4xl font-outfit font-bold">
+                          {scenesProcessed}
+                        </p>
+                      </div>
+                    </Card>
+
+                    <Card className="flex min-w-80 w-fit flex-row justify-between p-4 bg-card text-card-foreground">
+                      <div className="flex flex-col gap-6">
+                        <p className="font-outfit font-semibold text-[#484E62] dark:text-[#B7BDD5]">
+                          Total ROHR Staked
+                        </p>
+                        <p className="text-4xl font-outfit font-bold">
+                          {stakedAmount}
+                        </p>
+                      </div>
+                    </Card>
+
+                    <Card className="flex w-full justify-between p-4 cursor-pointer bg-card text-card-foreground">
+                      <div className="flex flex-col gap-6">
+                        <p className="font-outfit font-semibold text-[#484E62] dark:text-[#B7BDD5]">
+                          Session Rewards
+                        </p>
+                        <p className="text-4xl font-outfit font-bold">
+                          {scenesProcessed}
+                        </p>
+                      </div>
+                      <p className="font-atyp text-sm text-[#34C759] font-bold">
+                        Collect ↗
+                      </p>
+                    </Card>
                   </div>
                 </div>
                 <div className="flex flex-col p-4 min-w-fit gap-4">
