@@ -1,64 +1,58 @@
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import AudioVideoMiner from "@/components/molecules/audio-video-miner";
 import { useCrystalRohrProtocol } from "@/hooks/use-crystalrohr-protocol";
-import usePollingEffect from "@/hooks/use-polling-effect";
+import useStore from "@/store";
+
+const POLLING_INTERVAL = 2000; // 2 seconds
 
 const VideoQueueManager = () => {
-  const [cidQueue, setCIDQueue] = useState<string[]>([]);
   const [currentCID, setCurrentCID] = useState<string | null>(null);
-  const lastProcessedCIDs = useRef<string[]>([]);
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
 
-  const {
-    completeCaptionVideo,
-    getIncompleteVideoCaptionTasks,
-    getIncompleteVideoCaptionTasksDeps,
-  } = useCrystalRohrProtocol();
+  const { completeCaptionVideo, getIncompleteVideoCaptionTasks } =
+    useCrystalRohrProtocol();
+  const { updateStats } = useStore();
 
-  const fetchIncompleteTasks = async () => {
+  const fetchIncompleteVideoCaptionTasks = useCallback(async () => {
     try {
-      const incompleteTasks = await getIncompleteVideoCaptionTasks();
-      console.log(incompleteTasks);
-
-      // Filter out CIDs that are in the last 3 processed CIDs
-      const filteredTasks = incompleteTasks.filter(
-        (task) => !lastProcessedCIDs.current.includes(task.ipfs_hash)
-      );
-
-      // Update the queue with the new filtered tasks
-      setCIDQueue(filteredTasks.map((task) => task.ipfs_hash));
+      const tasks = await getIncompleteVideoCaptionTasks();
+      if (tasks.length > 0) {
+        setCurrentCID(tasks[0].ipfs_hash);
+      }
     } catch (error) {
-      console.error("Error fetching incomplete tasks:", error);
+      console.error("Error fetching incomplete video caption tasks:", error);
     }
-  };
-
-  const [stopPolling, startPolling] = usePollingEffect(
-    fetchIncompleteTasks,
-    [...getIncompleteVideoCaptionTasksDeps],
-    { interval: 25_000 } // Poll every 25 seconds
-  );
+  }, [getIncompleteVideoCaptionTasks]);
 
   useEffect(() => {
-    startPolling();
-    return () => {
-      stopPolling();
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current);
+      pollingInterval.current = null;
+    }
+
+    const pollForTasks = async () => {
+      await fetchIncompleteVideoCaptionTasks();
+      // Only set up the next interval if we still don't have a CID
+      if (!currentCID) {
+        pollingInterval.current = setInterval(
+          fetchIncompleteVideoCaptionTasks,
+          POLLING_INTERVAL
+        );
+      }
     };
-  }, [startPolling, stopPolling]);
 
-  useEffect(() => {
-    if (cidQueue.length > 0 && !currentCID) {
-      const nextCID = cidQueue[0];
-      setCurrentCID(nextCID);
-      setCIDQueue((prevQueue) => prevQueue.slice(1));
+    pollForTasks();
 
-      // Update the last processed CIDs
-      lastProcessedCIDs.current = [
-        nextCID,
-        ...lastProcessedCIDs.current.slice(0, 2),
-      ];
-    }
-  }, [cidQueue, currentCID]);
+    // Cleanup
+    return () => {
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current);
+        pollingInterval.current = null;
+      }
+    };
+  }, [currentCID, fetchIncompleteVideoCaptionTasks]);
 
   const handleMiningComplete = async (
     capturedImages: string[],
@@ -71,18 +65,26 @@ const VideoQueueManager = () => {
           formData.append("capturedImages", image)
         );
         formData.append("extractedAudio", extractedAudio, "audio.wav");
+
         const response = await fetch("/api/vision", {
           method: "POST",
           body: formData,
         });
         const message = await response.json();
         await completeCaptionVideo(message.cid);
+
+        // Update analytics:
+        // - Completed Captions increases by 1
+        // - Scenes Processed increases by the number of captured images
+        updateStats(capturedImages.length);
+
         toast.success("Caption Job Successful");
+        setCurrentCID(null);
       } catch (error) {
         console.error("Error completing video caption:", error);
+        setCurrentCID(null);
       }
     }
-    setCurrentCID(null);
   };
 
   return (
@@ -90,14 +92,6 @@ const VideoQueueManager = () => {
       {currentCID && (
         <AudioVideoMiner cid={currentCID} onComplete={handleMiningComplete} />
       )}
-      <div>
-        <h3>Upcoming Videos:</h3>
-        <ul>
-          {cidQueue.map((cid, index) => (
-            <li key={index}>{cid}</li>
-          ))}
-        </ul>
-      </div>
     </div>
   );
 };
