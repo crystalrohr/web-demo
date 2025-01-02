@@ -1,5 +1,9 @@
 import { config } from "@/providers/wagmi/config";
-import { simulateContract, writeContract } from "@wagmi/core";
+import {
+  simulateContract,
+  writeContract,
+  waitForTransactionReceipt,
+} from "@wagmi/core";
 import { Address, parseUnits } from "viem";
 import { readContract } from "wagmi/actions";
 import ky from "ky";
@@ -25,7 +29,8 @@ export class EVMProtocolService implements IProtocolService {
         address: CRYSTALROHR_PROTOCOL_ADDRESS,
         functionName: "joinPool",
       });
-      return writeContract(config, request);
+      const hash = await writeContract(config, request);
+      return waitForTransactionReceipt(config, { confirmations: 1, hash });
     } catch (err) {
       console.error("Error joining pool:", err);
       throw err;
@@ -38,9 +43,10 @@ export class EVMProtocolService implements IProtocolService {
         abi: CRYSTALROHR_PROTOCOL_ABI,
         address: CRYSTALROHR_PROTOCOL_ADDRESS,
         functionName: "stake",
-        args: [parseUnits(amount.toString(), 18)],
+        args: [parseUnits(amount.toString(), 8)],
       });
-      return writeContract(config, request);
+      const hash = await writeContract(config, request);
+      return waitForTransactionReceipt(config, { confirmations: 1, hash });
     } catch (err) {
       console.error("Error staking:", err);
       throw err;
@@ -53,9 +59,10 @@ export class EVMProtocolService implements IProtocolService {
         abi: CRYSTALROHR_PROTOCOL_ABI,
         address: CRYSTALROHR_PROTOCOL_ADDRESS,
         functionName: "unstake",
-        args: [parseUnits(amount.toString(), 18)],
+        args: [parseUnits(amount.toString(), 8)],
       });
-      return writeContract(config, request);
+      const hash = await writeContract(config, request);
+      return waitForTransactionReceipt(config, { confirmations: 1, hash });
     } catch (err) {
       console.error("Error unstaking:", err);
       throw err;
@@ -69,7 +76,8 @@ export class EVMProtocolService implements IProtocolService {
         address: CRYSTALROHR_PROTOCOL_ADDRESS,
         functionName: "claimRewards",
       });
-      return writeContract(config, request);
+      const hash = await writeContract(config, request);
+      return waitForTransactionReceipt(config, { confirmations: 1, hash });
     } catch (err) {
       console.error("Error claiming rewards:", err);
       throw err;
@@ -82,9 +90,10 @@ export class EVMProtocolService implements IProtocolService {
         abi: ROHR_ABI,
         address: ROHR_ADDRESS,
         functionName: "mint",
-        args: [recipient, parseUnits(amount.toString(), 18)],
+        args: [recipient, parseUnits(amount.toString(), 8)],
       });
-      return writeContract(config, request);
+      const hash = await writeContract(config, request);
+      return waitForTransactionReceipt(config, { confirmations: 1, hash });
     } catch (err) {
       console.error("Error minting ROHR:", err);
       throw err;
@@ -99,7 +108,8 @@ export class EVMProtocolService implements IProtocolService {
         functionName: "captionVideo",
         args: [ipfsHash],
       });
-      return writeContract(config, request);
+      const hash = await writeContract(config, request);
+      return waitForTransactionReceipt(config, { confirmations: 1, hash });
     } catch (err) {
       console.error("Error captioning video:", err);
       throw err;
@@ -114,7 +124,8 @@ export class EVMProtocolService implements IProtocolService {
         functionName: "completeCaptionVideo",
         args: [caption],
       });
-      return writeContract(config, request);
+      const hash = await writeContract(config, request);
+      return waitForTransactionReceipt(config, { confirmations: 1, hash });
     } catch (err) {
       console.error("Error completing caption:", err);
       throw err;
@@ -124,23 +135,22 @@ export class EVMProtocolService implements IProtocolService {
   async getVideoCaptionsByHash(ipfsHash: string): Promise<VideoCaptionEvent[]> {
     try {
       const query = {
-        query: `
-        query VideoCaptions($ipfsHash: String!) {
-        videoCaptionCompleteds(
-          where: { ipfsHash: $ipfsHash }
-          orderBy: blockNumber
-          orderDirection: desc
-        ) {
-          id
-          ipfsHash
-          userAddress
-          nodeAddress
-          caption
-          blockNumber
-          timestamp
-        }
-        }
-      `,
+        query: `query VideoCaptions($ipfsHash: String!) {
+            videoCaptionCompleteds(
+              where: { ipfsHash: $ipfsHash }
+              orderBy: blockNumber
+              orderDirection: desc
+            ) {
+              id
+              ipfsHash
+              userAddress
+              nodeAddress
+              caption
+              blockNumber
+              timestamp
+            }
+          }
+        `,
         variables: { ipfsHash },
       };
 
@@ -166,8 +176,30 @@ export class EVMProtocolService implements IProtocolService {
     // TODO: Implement
   }
 
-  async getIncompleteVideoCaptionTasks(): Promise<any> {
-    // TODO: Implement
+  async getIncompleteVideoCaptionTasks(
+    nodeAddress: Address
+  ): Promise<Omit<VideoCaptionEvent, "caption">[]> {
+    try {
+      const nodeDetails = await readContract(config, {
+        address: CRYSTALROHR_PROTOCOL_ADDRESS,
+        abi: CRYSTALROHR_PROTOCOL_ABI,
+        functionName: "nodes",
+        args: [nodeAddress],
+      });
+
+      return nodeDetails[1]
+        ? [
+            {
+              user_address: nodeDetails[2],
+              ipfs_hash: nodeDetails[1],
+              node_address: nodeAddress,
+            },
+          ]
+        : [];
+    } catch (err) {
+      console.error("Error getting incomplete video caption tasks:", err);
+      throw err;
+    }
   }
 
   async isValidStaker(nodeAddress: Address): Promise<boolean> {
